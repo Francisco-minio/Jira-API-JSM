@@ -84,12 +84,13 @@ def verify_access_token(token: str) -> Optional[dict]:
 
 
 def init_admin_user(session: Session) -> User:
-    """Crea el usuario administrador por defecto si la base de datos no tiene usuarios."""
-    user_count = session.scalar(select(User.id).limit(1))
-    if user_count is None:
-        settings = get_settings()
+    """Crea o actualiza el usuario administrador configurado en .env."""
+    settings = get_settings()
+    admin = session.scalar(select(User).where(User.username == settings.admin_username.strip()).limit(1))
+    
+    if admin is None:
         admin = User(
-            username=settings.admin_username,
+            username=settings.admin_username.strip(),
             password_hash=hash_password(settings.admin_password),
             full_name="Administrador del Sistema",
             email="admin@local.host",
@@ -99,5 +100,11 @@ def init_admin_user(session: Session) -> User:
         session.add(admin)
         session.commit()
         session.refresh(admin)
-        return admin
-    return session.scalar(select(User).where(User.username == get_settings().admin_username).limit(1))
+    else:
+        # Sincronizar contraseña con la indicada en el archivo .env actual
+        admin.password_hash = hash_password(settings.admin_password)
+        admin.active = True
+        session.commit()
+        session.refresh(admin)
+        
+    return admin
