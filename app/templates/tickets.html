@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .table-container { overflow: auto; padding: 24px; border-radius: 24px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 8px; }
+    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--panel-border); font-size: 0.95rem; }
+    tbody tr { transition: all 0.2s ease; border-radius: 8px; }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.03); transform: scale(1.002); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    th { color: var(--muted); font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.1); }
+    
+    .status-badge, .level-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .status-badge.done { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge.in-progress { background: rgba(14, 165, 233, 0.15); color: var(--accent); border: 1px solid rgba(14, 165, 233, 0.3); }
+    .status-badge.to-do { background: rgba(148, 163, 184, 0.15); color: var(--muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+    
+    .level-badge.l1 { background: rgba(14, 165, 233, 0.15); color: var(--accent); border: 1px solid rgba(14, 165, 233, 0.3); }
+    .level-badge.l2 { background: rgba(251, 191, 36, 0.15); color: var(--warn); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .level-badge.l3 { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+{% endblock %}
+
+{% block content %}
+    
+    <section class="hero">
+      <h1>Estado de Tickets</h1>
+      <p>Explora y filtra todos los tickets por cliente, estado y nivel de servicio.</p>
+    </section>
+
+    <div class="panel filters">
+      <div class="field">
+        <label>Desde</label>
+        <input id="fromDate" type="date" value="{{ default_from }}">
+      </div>
+      <div class="field">
+        <label>Hasta</label>
+        <input id="toDate" type="date" value="{{ default_to }}">
+      </div>
+      <div class="field" style="min-width: 200px;">
+        <label>Cliente</label>
+        <select id="clientFilter">
+          <option value="">Todos los clientes</option>
+        </select>
+      </div>
+      <div class="field" style="min-width: 150px;">
+        <label>Estado</label>
+        <select id="statusFilter">
+          <option value="">Todos los estados</option>
+        </select>
+      </div>
+      <div class="field" style="min-width: 150px;">
+        <label>Nivel de Servicio</label>
+        <select id="levelFilter">
+          <option value="">Todos los niveles</option>
+        </select>
+      </div>
+      <button id="refreshBtn">Filtrar Tickets</button>
+    </div>
+
+    <section class="stats">
+      <div class="panel stat"><div class="label">Total Tickets</div><div class="value" id="totalTickets">-</div></div>
+      <div class="panel stat"><div class="label">Horas Totales</div><div class="value" id="totalHours">-</div></div>
+      <div class="panel stat"><div class="label">Incidencias</div><div class="value" id="totalIncidents">-</div></div>
+    </section>
+
+    <section class="panel table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Cliente</th>
+            <th>Nivel</th>
+            <th>Estado</th>
+            <th>Resumen</th>
+            <th>Asignado</th>
+            <th>Horas</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody id="ticketsTable">
+          <tr><td colspan="8">Cargando tickets...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  <script>
+    let allTickets = [];
+
+    function fmt(n) {
+      return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(n);
+    }
+
+    function escapeHtml(value) {
+      if (!value) return '-';
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function fmtDate(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleDateString('es-CL');
+    }
+
+    function getStatusClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('done') || s.includes('cerrado') || s.includes('resuelto')) return 'done';
+      if (s.includes('progress') || s.includes('curso')) return 'in-progress';
+      return 'to-do';
+    }
+
+    function getLevelClass(level) {
+      const s = String(level).toLowerCase();
+      if (s.includes('l1')) return 'l1';
+      if (s.includes('l2')) return 'l2';
+      if (s.includes('l3')) return 'l3';
+      return '';
+    }
+
+    async function loadTickets() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const client = document.getElementById('clientFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const level = document.getElementById('levelFilter').value;
+
+      const tbody = document.getElementById('ticketsTable');
+      tbody.innerHTML = '<tr><td colspan="8">Cargando tickets...</td></tr>';
+
+      try {
+        const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+        if (client) params.set('client_text', client);
+        if (status) params.set('status', status);
+        if (level) params.set('service_level', level);
+
+        const response = await fetch(`/api/reports/tickets?${params}`);
+        if (!response.ok) throw new Error('Error al cargar tickets');
+        
+        allTickets = await response.json();
+        renderTickets();
+        updateFilters(); // Sólo actualizamos opciones si no están filtradas?
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger)">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTickets() {
+      document.getElementById('totalTickets').textContent = allTickets.length;
+      document.getElementById('totalHours').textContent = fmt(allTickets.reduce((acc, t) => acc + (t.hours_logged || 0), 0));
+      document.getElementById('totalIncidents').textContent = allTickets.filter(t => t.incident).length;
+
+      const tbody = document.getElementById('ticketsTable');
+      if (allTickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8">No se encontraron tickets con los filtros seleccionados.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allTickets.map(t => `
+        <tr>
+          <td><a href="{{ jira_base_url }}/browse/${escapeHtml(t.jira_key)}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">${escapeHtml(t.jira_key)}</a></td>
+          <td>${escapeHtml(t.client_text || (t.organizations && t.organizations.length ? t.organizations.join(', ') : 'Sin cliente'))}</td>
+          <td><span class="level-badge ${getLevelClass(t.service_level)}">${escapeHtml(t.service_level || 'Sin nivel')}</span></td>
+          <td><span class="status-badge ${getStatusClass(t.status)}">${escapeHtml(t.status)}</span></td>
+          <td>${escapeHtml(t.summary)}</td>
+          <td>${escapeHtml(t.assignee_name || 'Sin asignar')}</td>
+          <td>${fmt(t.hours_logged || 0)}</td>
+          <td>${fmtDate(t.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Para cargar los selectores de forma dinámica en base a todos los tickets de la fecha (si no hay filtro especifico)
+    async function loadFilterOptions() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      
+      try {
+        const response = await fetch(`/api/reports/tickets?from_date=${fromDate}&to_date=${toDate}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        const clients = new Set();
+        const statuses = new Set();
+        const levels = new Set();
+        
+        data.forEach(t => {
+          if (t.client_text) clients.add(t.client_text);
+          if (t.status) statuses.add(t.status);
+          if (t.service_level) levels.add(t.service_level);
+        });
+
+        populateSelect('clientFilter', clients, 'Todos los clientes');
+        populateSelect('statusFilter', statuses, 'Todos los estados');
+        populateSelect('levelFilter', levels, 'Todos los niveles');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function populateSelect(id, set, defaultText) {
+      const select = document.getElementById(id);
+      const currentVal = select.value;
+      select.innerHTML = `<option value="">${defaultText}</option>` + 
+        Array.from(set).sort().map(val => `<option value="${escapeHtml(val)}" ${currentVal === val ? 'selected' : ''}>${escapeHtml(val)}</option>`).join('');
+    }
+
+    function updateFilters() {
+      // Opcional: actualizar selects basados en datos mostrados
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadTickets);
+    document.getElementById('fromDate').addEventListener('change', () => { loadFilterOptions(); loadTickets(); });
+    document.getElementById('toDate').addEventListener('change', () => { loadFilterOptions(); loadTickets(); });
+
+    // Inicializar
+    loadFilterOptions().then(loadTickets);
+
+  </script>
+{% endblock %}

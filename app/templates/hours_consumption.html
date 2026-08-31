@@ -1,0 +1,885 @@
+{% extends "base.html" %}
+
+{% block title %}Consumo de Horas - {{ request.app.title }}{% endblock %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .header-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text) 0%, var(--muted) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-title p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  
+  .filter-panel {
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 100;
+  }
+
+  .quick-ranges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-range {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-range:hover, .btn-range.active {
+    background: rgba(14, 165, 233, 0.15);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+  }
+  
+  .btn-export-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .btn-export-pdf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+  }
+
+  /* Multi-select Dropdown */
+  .multiselect-container {
+    position: relative;
+    min-width: 210px;
+  }
+  .multiselect-btn {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.6);
+    color: var(--text);
+    padding: 12px 16px;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .multiselect-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 250px;
+    z-index: 1000;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.85);
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .multiselect-dropdown.show {
+    display: block;
+  }
+  .multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #f8fafc;
+    font-weight: 500;
+    transition: background 0.15s ease;
+  }
+  .multiselect-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .multiselect-option span, .multiselect-option strong {
+    color: #f8fafc;
+  }
+  .multiselect-option input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .dropdown-divider {
+    height: 1px;
+    background: var(--panel-border);
+    margin: 4px 0;
+  }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--accent);
+  }
+  .kpi-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .kpi-val {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Charts layout */
+  .charts-grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 1200px) {
+    .charts-grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .chart-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  /* Tables layout */
+  .tables-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 1200px) {
+    .tables-grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .table-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: auto;
+  }
+  .table-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .table-custom th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .table-custom td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+  }
+  .table-custom tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  .progress-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 999px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+  <div class="header-title">
+    <h1>Consumo de Horas</h1>
+    <p>Reporte ejecutivo de horas invertidas en soporte, proyectos y mantenimientos.</p>
+  </div>
+  <button id="btnExportPdf" class="btn-export-pdf">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    Exportar PDF (Reporte Ejecutivo)
+  </button>
+</div>
+
+<!-- Filtros -->
+<div class="panel filter-panel">
+  <div class="quick-ranges">
+    <button class="btn-range" onclick="setQuickRange('this_month')">Este Mes</button>
+    <button class="btn-range" onclick="setQuickRange('last_month')">Mes Anterior</button>
+    <button class="btn-range active" onclick="setQuickRange('last_30')">Últimos 30 días</button>
+    <button class="btn-range" onclick="setQuickRange('this_year')">Este Año</button>
+  </div>
+
+  <div class="filter-row">
+    <div class="field">
+      <label for="fromDate">Desde</label>
+      <input type="date" id="fromDate" value="{{ default_from }}">
+    </div>
+    <div class="field">
+      <label for="toDate">Hasta</label>
+      <input type="date" id="toDate" value="{{ default_to }}">
+    </div>
+    <div class="field">
+      <label for="clientSelect">Cliente</label>
+      <select id="clientSelect">
+        <option value="">-- Todos los Clientes --</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="agentSelect">Técnico / Agente</label>
+      <select id="agentSelect">
+        <option value="">-- Todos los Agentes --</option>
+      </select>
+    </div>
+    <div class="field multiselect-container">
+      <label>Estados de Ticket</label>
+      <div id="statusMultiSelect" class="multiselect-btn" onclick="toggleStatusDropdown(event)">
+        <span id="statusSelectLabel">-- Todos los Estados --</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div id="statusDropdown" class="multiselect-dropdown print-only-hide" onclick="event.stopPropagation()">
+        <label class="multiselect-option">
+          <input type="checkbox" id="chkAllStatuses" checked onchange="toggleSelectAllStatuses(this)">
+          <strong>-- Todos los Estados --</strong>
+        </label>
+        <div class="dropdown-divider"></div>
+        <div id="statusCheckboxesList"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="serviceLevelSelect">Nivel de Servicio</label>
+      <select id="serviceLevelSelect">
+        <option value="">-- Todos los Niveles --</option>
+        <option value="L1/L2">L1/L2</option>
+        <option value="L3">L3</option>
+        <option value="SOPORTE">SOPORTE</option>
+        <option value="TERRENO">TERRENO</option>
+        <option value="PROYECTO">PROYECTO</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Tarjetas KPI -->
+<div class="kpi-grid">
+  <div class="panel kpi-card">
+    <div class="kpi-title">Total Horas Consumidas</div>
+    <div class="kpi-val" id="kpiTotalHours">0.0 hrs</div>
+    <div class="kpi-sub" id="kpiTotalWorklogs">0 registros de trabajo</div>
+  </div>
+  <div class="panel kpi-card" style="--accent: #8b5cf6;">
+    <div class="kpi-title">Tickets Atendidos</div>
+    <div class="kpi-val" id="kpiTotalTickets">0</div>
+    <div class="kpi-sub">Con registro de tiempo</div>
+  </div>
+  <div class="panel kpi-card" style="--accent: #10b981;">
+    <div class="kpi-title">Promedio por Ticket</div>
+    <div class="kpi-val" id="kpiAvgHours">0.0 hrs</div>
+    <div class="kpi-sub">Horas por ticket gestionado</div>
+  </div>
+  <div class="panel kpi-card" style="--accent: #f59e0b;">
+    <div class="kpi-title">Mayor Consumo</div>
+    <div class="kpi-val" id="kpiTopClient" style="font-size: 1.3rem;">-</div>
+    <div class="kpi-sub" id="kpiTopClientHours">0.0 hrs invertidas</div>
+  </div>
+</div>
+
+<!-- Gráficos Principales -->
+<div class="charts-grid-3">
+  <div class="panel chart-card">
+    <h3>Evolución Diaria de Consumo de Horas</h3>
+    <div style="position: relative; height: 280px;">
+      <canvas id="dailyChart"></canvas>
+    </div>
+  </div>
+  <div class="panel chart-card">
+    <h3>Distribución por Cliente</h3>
+    <div style="position: relative; height: 280px;">
+      <canvas id="clientChart"></canvas>
+    </div>
+  </div>
+  <div class="panel chart-card">
+    <h3>Distribución por Estado</h3>
+    <div style="position: relative; height: 280px;">
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tablas de Resumen Ejecutivo -->
+<div class="tables-grid-3">
+  <div class="panel table-card">
+    <h3>Resumen por Cliente</h3>
+    <table class="table-custom" id="clientTable">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th style="text-align: right;">Tickets</th>
+          <th style="text-align: right;">Horas</th>
+          <th style="text-align: right;">% Consumo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel table-card">
+    <h3>Resumen por Estado de Ticket</h3>
+    <table class="table-custom" id="statusTable">
+      <thead>
+        <tr>
+          <th>Estado</th>
+          <th style="text-align: right;">Tickets</th>
+          <th style="text-align: right;">Horas</th>
+          <th style="text-align: right;">% Consumo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel table-card">
+    <h3>Resumen por Agente</h3>
+    <table class="table-custom" id="agentTable">
+      <thead>
+        <tr>
+          <th>Agente</th>
+          <th style="text-align: right;">Tickets</th>
+          <th style="text-align: right;">Horas</th>
+          <th style="text-align: right;">% Consumo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel table-card" style="margin-bottom: 32px;">
+  <h3>Detalle de Tickets con Mayor Registro de Horas</h3>
+  <table class="table-custom" id="ticketTable">
+    <thead>
+      <tr>
+        <th>Clave Jira</th>
+        <th>Resumen / Asunto</th>
+        <th>Cliente</th>
+        <th>Técnico</th>
+        <th>Nivel</th>
+        <th style="text-align: right;">Horas Logueadas</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="6" style="text-align: center; color: var(--muted);">Cargando tickets...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let dailyChartInstance = null;
+  let clientChartInstance = null;
+  let statusChartInstance = null;
+  const jiraBaseUrl = "{{ jira_base_url }}";
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadFilterOptions();
+    await fetchReportData();
+
+    document.getElementById('fromDate').addEventListener('change', fetchReportData);
+    document.getElementById('toDate').addEventListener('change', fetchReportData);
+    document.getElementById('clientSelect').addEventListener('change', fetchReportData);
+    document.getElementById('agentSelect').addEventListener('change', fetchReportData);
+    document.getElementById('serviceLevelSelect').addEventListener('change', fetchReportData);
+    
+    document.getElementById('btnExportPdf').addEventListener('click', exportPdf);
+
+    document.addEventListener('click', () => {
+      const dropdown = document.getElementById('statusDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+    });
+  });
+
+  function toggleStatusDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('statusDropdown');
+    dropdown.classList.toggle('show');
+  }
+
+  async function loadFilterOptions() {
+    try {
+      const fromVal = document.getElementById('fromDate').value;
+      const toVal = document.getElementById('toDate').value;
+      
+      const [clientRes, agentRes, statusRes] = await Promise.all([
+        fetch(`/api/reports/ticket-clients?from_date=${fromVal}&to_date=${toVal}`),
+        fetch(`/api/reports/agents?from_date=${fromVal}&to_date=${toVal}`),
+        fetch(`/api/reports/statuses`)
+      ]);
+
+      if (clientRes.ok) {
+        const clients = await clientRes.json();
+        const clientSelect = document.getElementById('clientSelect');
+        const current = clientSelect.value;
+        clientSelect.innerHTML = '<option value="">-- Todos los Clientes --</option>';
+        clients.forEach(c => {
+          const clientName = c.client_text || c.name || c.client_name;
+          if (clientName) {
+            const opt = document.createElement('option');
+            opt.value = clientName;
+            opt.textContent = clientName;
+            if (clientName === current) opt.selected = true;
+            clientSelect.appendChild(opt);
+          }
+        });
+      }
+
+      if (agentRes.ok) {
+        const agents = await agentRes.json();
+        const agentSelect = document.getElementById('agentSelect');
+        const currentAg = agentSelect.value;
+        agentSelect.innerHTML = '<option value="">-- Todos los Agentes --</option>';
+        agents.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a.agent_id;
+          opt.textContent = a.agent_name;
+          if (a.agent_id == currentAg) opt.selected = true;
+          agentSelect.appendChild(opt);
+        });
+      }
+
+      if (statusRes.ok) {
+        const statuses = await statusRes.json();
+        const listContainer = document.getElementById('statusCheckboxesList');
+        listContainer.innerHTML = '';
+        statuses.forEach(st => {
+          const label = document.createElement('label');
+          label.className = 'multiselect-option';
+          label.innerHTML = `
+            <input type="checkbox" value="${st}" class="chk-status" onchange="onStatusCheckboxChange()">
+            <span>${st}</span>
+          `;
+          listContainer.appendChild(label);
+        });
+      }
+    } catch (err) {
+      console.error('Error al cargar filtros:', err);
+    }
+  }
+
+  function toggleSelectAllStatuses(mainChk) {
+    const checkboxes = document.querySelectorAll('.chk-status');
+    checkboxes.forEach(chk => chk.checked = false);
+    updateStatusSelectLabel();
+    fetchReportData();
+  }
+
+  function onStatusCheckboxChange() {
+    const checkboxes = document.querySelectorAll('.chk-status');
+    const checkedCount = Array.from(checkboxes).filter(c => c.checked).length;
+    document.getElementById('chkAllStatuses').checked = (checkedCount === 0);
+    updateStatusSelectLabel();
+    fetchReportData();
+  }
+
+  function getSelectedStatuses() {
+    const checkboxes = document.querySelectorAll('.chk-status');
+    return Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+  }
+
+  function updateStatusSelectLabel() {
+    const selected = getSelectedStatuses();
+    const lbl = document.getElementById('statusSelectLabel');
+    if (selected.length === 0) {
+      lbl.textContent = '-- Todos los Estados --';
+    } else if (selected.length === 1) {
+      lbl.textContent = selected[0];
+    } else {
+      lbl.textContent = `${selected.length} estados seleccionados`;
+    }
+  }
+
+  function setQuickRange(type) {
+    const today = new Date();
+    let from, to;
+
+    document.querySelectorAll('.btn-range').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (type === 'this_month') {
+      from = new Date(today.getFullYear(), today.getMonth(), 1);
+      to = today;
+    } else if (type === 'last_month') {
+      from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      to = new Date(today.getFullYear(), today.getMonth(), 0);
+    } else if (type === 'last_30') {
+      to = today;
+      from = new Date(today);
+      from.setDate(from.getDate() - 30);
+    } else if (type === 'this_year') {
+      from = new Date(today.getFullYear(), 0, 1);
+      to = today;
+    }
+
+    document.getElementById('fromDate').value = from.toISOString().split('T')[0];
+    document.getElementById('toDate').value = to.toISOString().split('T')[0];
+    fetchReportData();
+  }
+
+  async function fetchReportData() {
+    const fromVal = document.getElementById('fromDate').value;
+    const toVal = document.getElementById('toDate').value;
+    const clientVal = document.getElementById('clientSelect').value;
+    const agentVal = document.getElementById('agentSelect').value;
+    const slVal = document.getElementById('serviceLevelSelect').value;
+    const selectedStatuses = getSelectedStatuses();
+
+    let url = `/api/reports/hours-consumption?from_date=${fromVal}&to_date=${toVal}`;
+    if (clientVal) url += `&client_text=${encodeURIComponent(clientVal)}`;
+    if (agentVal) url += `&agent_id=${encodeURIComponent(agentVal)}`;
+    if (slVal) url += `&service_level=${encodeURIComponent(slVal)}`;
+    selectedStatuses.forEach(st => {
+      url += `&statuses=${encodeURIComponent(st)}`;
+    });
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error al obtener datos');
+      const data = await res.json();
+      
+      updateKpis(data.kpis);
+      renderDailyChart(data.daily_series);
+      renderClientChart(data.clients);
+      renderStatusChart(data.statuses);
+      renderClientTable(data.clients);
+      renderStatusTable(data.statuses);
+      renderAgentTable(data.agents);
+      renderTicketTable(data.tickets);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function updateKpis(kpis) {
+    document.getElementById('kpiTotalHours').textContent = `${kpis.total_hours.toFixed(1)} hrs`;
+    document.getElementById('kpiTotalWorklogs').textContent = `${kpis.total_worklogs} registros de trabajo`;
+    document.getElementById('kpiTotalTickets').textContent = kpis.total_tickets;
+    document.getElementById('kpiAvgHours').textContent = `${kpis.avg_hours_per_ticket.toFixed(2)} hrs`;
+    document.getElementById('kpiTopClient').textContent = kpis.top_client_name || 'N/A';
+    document.getElementById('kpiTopClientHours').textContent = `${kpis.top_client_hours.toFixed(1)} hrs invertidas`;
+  }
+
+  function renderDailyChart(series) {
+    const ctx = document.getElementById('dailyChart').getContext('2d');
+    const labels = series.map(s => s.date);
+    const values = series.map(s => s.hours);
+
+    if (dailyChartInstance) dailyChartInstance.destroy();
+
+    dailyChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Horas Diarias',
+          data: values,
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14, 165, 233, 0.12)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#94a3b8' }
+          },
+          y: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#94a3b8' },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function renderClientChart(clients) {
+    const ctx = document.getElementById('clientChart').getContext('2d');
+    const topClients = clients.slice(0, 6);
+    const labels = topClients.map(c => c.client_name);
+    const values = topClients.map(c => c.hours_logged);
+
+    if (clientChartInstance) clientChartInstance.destroy();
+
+    clientChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#64748b'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#f8fafc', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  function renderStatusChart(statuses) {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    if (!statuses || statuses.length === 0) {
+      if (statusChartInstance) statusChartInstance.destroy();
+      return;
+    }
+
+    const labels = statuses.map(s => s.status_name);
+    const values = statuses.map(s => s.hours_logged);
+
+    if (statusChartInstance) statusChartInstance.destroy();
+
+    statusChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#64748b', '#ef4444'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#f8fafc', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  function renderClientTable(clients) {
+    const tbody = document.querySelector('#clientTable tbody');
+    if (!clients || clients.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin registros</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = clients.map(c => `
+      <tr>
+        <td>
+          <strong>${c.client_name}</strong>
+          <div class="progress-track">
+            <div class="progress-fill" style="width: ${Math.min(c.percentage, 100)}%;"></div>
+          </div>
+        </td>
+        <td style="text-align: right;">${c.ticket_count}</td>
+        <td style="text-align: right;"><strong>${c.hours_logged.toFixed(2)} h</strong></td>
+        <td style="text-align: right; color: var(--muted);">${c.percentage.toFixed(1)}%</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderStatusTable(statuses) {
+    const tbody = document.querySelector('#statusTable tbody');
+    if (!statuses || statuses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin registros</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = statuses.map(s => `
+      <tr>
+        <td>
+          <strong>${s.status_name}</strong>
+          <div class="progress-track">
+            <div class="progress-fill" style="width: ${Math.min(s.percentage, 100)}%; background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
+          </div>
+        </td>
+        <td style="text-align: right;">${s.ticket_count}</td>
+        <td style="text-align: right;"><strong>${s.hours_logged.toFixed(2)} h</strong></td>
+        <td style="text-align: right; color: var(--muted);">${s.percentage.toFixed(1)}%</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderAgentTable(agents) {
+    const tbody = document.querySelector('#agentTable tbody');
+    if (!agents || agents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin registros</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = agents.map(a => `
+      <tr>
+        <td>
+          <strong>${a.agent_name}</strong>
+          <div class="progress-track">
+            <div class="progress-fill" style="width: ${Math.min(a.percentage, 100)}%; background: linear-gradient(90deg, #8b5cf6, #ec4899);"></div>
+          </div>
+        </td>
+        <td style="text-align: right;">${a.ticket_count}</td>
+        <td style="text-align: right;"><strong>${a.hours_logged.toFixed(2)} h</strong></td>
+        <td style="text-align: right; color: var(--muted);">${a.percentage.toFixed(1)}%</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderTicketTable(tickets) {
+    const tbody = document.querySelector('#ticketTable tbody');
+    if (!tickets || tickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Sin tickets</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = tickets.slice(0, 30).map(t => `
+      <tr>
+        <td>
+          <a href="${jiraBaseUrl}/browse/${t.jira_key}" target="_blank" style="color: var(--accent); font-weight:700; text-decoration:none;">
+            ${t.jira_key}
+          </a>
+        </td>
+        <td>${t.summary}</td>
+        <td><span style="color: var(--muted);">${t.client_name}</span></td>
+        <td>${t.agent_name}</td>
+        <td><span class="weekly-pill" style="font-size:0.75rem; padding:3px 8px;">${t.service_level}</span></td>
+        <td style="text-align: right;"><strong>${t.hours_logged.toFixed(2)} hrs</strong></td>
+      </tr>
+    `).join('');
+  }
+
+  function exportPdf() {
+    const fromVal = document.getElementById('fromDate').value;
+    const toVal = document.getElementById('toDate').value;
+    const clientVal = document.getElementById('clientSelect').value;
+    const agentVal = document.getElementById('agentSelect').value;
+    const slVal = document.getElementById('serviceLevelSelect').value;
+    const selectedStatuses = getSelectedStatuses();
+
+    let url = `/api/reports/hours-consumption/pdf?from_date=${fromVal}&to_date=${toVal}`;
+    if (clientVal) url += `&client_text=${encodeURIComponent(clientVal)}`;
+    if (agentVal) url += `&agent_id=${encodeURIComponent(agentVal)}`;
+    if (slVal) url += `&service_level=${encodeURIComponent(slVal)}`;
+    selectedStatuses.forEach(st => {
+      url += `&statuses=${encodeURIComponent(st)}`;
+    });
+
+    window.open(url, '_blank');
+  }
+</script>
+{% endblock %}

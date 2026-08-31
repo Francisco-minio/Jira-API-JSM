@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "jira-reports": {
+      "command": "python",
+      "args": ["-m", "app.mcp_server"],
+      "env": {
+        "PYTHONPATH": "."
+      }
+    }
+  }
+}

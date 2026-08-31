@@ -1,0 +1,711 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+  /* Estilos específicos del calendario */
+  .fc {
+    --fc-border-color: rgba(255, 255, 255, 0.08);
+    --fc-daygrid-event-dot-width: 8px;
+    --fc-page-bg-color: transparent;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 24px;
+    border: 1px solid var(--panel-border);
+    padding: 24px;
+    box-shadow: var(--panel-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-top: 16px;
+    animation: fadeInUp 0.5s ease-out;
+  }
+  .fc-theme-standard .fc-scrollgrid {
+    border: none;
+  }
+  .fc .fc-toolbar-title {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .fc .fc-button-primary {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 8px 16px;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .fc .fc-button-primary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  .fc .fc-button-primary:disabled {
+    background: rgba(255, 255, 255, 0.01);
+    border-color: rgba(255, 255, 255, 0.03);
+    opacity: 0.5;
+  }
+  .fc .fc-button-active {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+  }
+  .fc-day-today {
+    background: rgba(14, 165, 233, 0.03) !important;
+  }
+  .fc-event {
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .fc-event:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Estados de visitas */
+  .event-default { background: rgba(14, 165, 233, 0.15) !important; color: var(--accent) !important; border-left: 4px solid var(--accent) !important; }
+  .event-abierto { background: rgba(16, 185, 129, 0.15) !important; color: var(--success) !important; border-left: 4px solid var(--success) !important; }
+  .event-en-progreso { background: rgba(139, 92, 246, 0.15) !important; color: var(--accent-2) !important; border-left: 4px solid var(--accent-2) !important; }
+  .event-resuelto { background: rgba(148, 163, 184, 0.15) !important; color: var(--muted) !important; border-left: 4px solid var(--muted) !important; }
+  .event-pendiente { background: rgba(251, 191, 36, 0.15) !important; color: var(--warn) !important; border-left: 4px solid var(--warn) !important; }
+  .event-cerrado { background: rgba(239, 68, 68, 0.15) !important; color: var(--danger) !important; border-left: 4px solid var(--danger) !important; }
+
+  /* Leyenda */
+  .legend-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 16px 24px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 16px;
+    border: 1px solid var(--panel-border);
+    animation: fadeInUp 0.5s ease-out;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  .legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+
+  /* Vista del loader del calendario */
+  .fc-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: rgba(15, 23, 42, 0.85);
+    padding: 24px 40px;
+    border-radius: 16px;
+    border: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+  }
+
+  /* Modales y Formularios */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 7, 18, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-content {
+    background: #0b1329;
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--panel-shadow);
+    border-radius: 24px;
+    width: 90%;
+    max-width: 600px;
+    padding: 32px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  }
+  .modal-overlay.active .modal-content {
+    transform: scale(1);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .modal-header h3 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  .close-btn:hover {
+    color: var(--danger);
+  }
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+  <div>
+    <h1>Calendario de Visitas</h1>
+    <p class="subtitle">Visualiza, coordina y agenda visitas programadas de manera visual e interactiva.</p>
+  </div>
+  <div>
+    <button class="action-btn" onclick="openCreateModal();">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="12" y1="14" x2="12" y2="20"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+      Agendar Visita
+    </button>
+  </div>
+</div>
+
+<div style="position: relative;">
+  <div id="calendarLoader" class="fc-loading" style="display: none;">
+    <span class="loader"></span>
+    Cargando visitas de JIRA...
+  </div>
+  <div id="calendar"></div>
+</div>
+
+<div class="legend-container">
+  <div class="legend-item"><span class="legend-color event-abierto"></span> Abierto / Por Hacer</div>
+  <div class="legend-item"><span class="legend-color event-en-progreso"></span> En Progreso</div>
+  <div class="legend-item"><span class="legend-color event-pendiente"></span> Pendiente / Espera</div>
+  <div class="legend-item"><span class="legend-color event-resuelto"></span> Resuelto / Terminado</div>
+  <div class="legend-item"><span class="legend-color event-cerrado"></span> Cerrado / Cancelado</div>
+</div>
+
+<!-- MODAL DE DETALLE Y EDICIÓN DE VISITA -->
+<div id="editVisitModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Detalle de Visita</h3>
+      <button class="close-btn" onclick="closeModal('editVisitModal');">&times;</button>
+    </div>
+    
+    <div id="modalNotice" class="notice-bar error" style="display: none; margin-bottom: 16px;"></div>
+
+    <form id="editVisitForm" onsubmit="submitVisitEdit(event);">
+      <input type="hidden" id="editVisitKey">
+      
+      <div class="form-grid" style="margin-bottom: 16px;">
+        <div class="form-group">
+          <label>JIRA Key</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="editVisitKeyDisplay" readonly style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--accent);">
+            <a id="editJiraLink" href="#" target="_blank" class="action-btn-small" style="padding: 10px 14px; text-decoration: none;">Ver en JIRA &nearr;</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cliente</label>
+          <input type="text" id="editVisitClient" readonly style="background: rgba(255,255,255,0.02); color: var(--muted);">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="editVisitStartDate">Fecha/Hora de Inicio</label>
+          <input type="datetime-local" id="editVisitStartDate" required>
+        </div>
+        <div class="form-group">
+          <label for="editVisitEndDate">Fecha/Hora de Fin</label>
+          <input type="datetime-local" id="editVisitEndDate" required>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="editVisitAssignee">Agente Asignado</label>
+          <select id="editVisitAssignee" required>
+            <option value="">Selecciona Agente...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editVisitServiceLevel">Nivel de Servicio (SLA)</label>
+          <select id="editVisitServiceLevel" required>
+            <option value="L1/L2">L1/L2</option>
+            <option value="L3">L3</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="editVisitCategory">Categoría Ticket</label>
+        <select id="editVisitCategory" required>
+          <option value="Estaciones de Trabajo">Estaciones de Trabajo</option>
+          <option value="Redes">Redes</option>
+          <option value="Servidores">Servidores</option>
+          <option value="Soporte de Software">Soporte de Software</option>
+          <option value="Impresoras">Impresoras</option>
+          <option value="Cuentas y Accesos">Cuentas y Accesos</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="editVisitDescription">Descripción / Bitácora</label>
+        <textarea id="editVisitDescription" rows="4" placeholder="Ingresa detalles de la visita..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button type="button" class="action-btn-small" style="background: rgba(255,255,255,0.05);" onclick="closeModal('editVisitModal');">Cancelar</button>
+        <button type="submit" id="saveVisitBtn" class="action-btn-small">Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL DE CREACIÓN DIRECTA (RE-UTILIZANDO NUESTRA LÓGICA EXISTENTE) -->
+<div id="createVisitModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 650px;">
+    <div class="modal-header">
+      <h3>Nueva Visita Programada</h3>
+      <button class="close-btn" onclick="closeModal('createVisitModal');">&times;</button>
+    </div>
+    
+    <div id="createNotice" class="notice-bar error" style="display: none; margin-bottom: 16px;"></div>
+
+    <form id="createVisitForm" onsubmit="submitVisitCreate(event);">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="formCompany">Empresa Cliente</label>
+          <select id="formCompany" required onchange="handleCompanyChange();">
+            <option value="">Selecciona Empresa...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="formInformer">Informador Autorizado</label>
+          <select id="formInformer" required>
+            <option value="">Selecciona Informador...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="formAssignee">Agente Asignado</label>
+          <select id="formAssignee" required>
+            <option value="">Selecciona Agente...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="formServiceLevel">Nivel de Servicio (SLA)</label>
+          <select id="formServiceLevel" required>
+            <option value="L1/L2" selected>L1/L2</option>
+            <option value="L3">L3</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="formStartDate">Fecha/Hora de Inicio</label>
+          <input type="datetime-local" id="formStartDate" required onchange="updateSummaryPreview();">
+        </div>
+        <div class="form-group">
+          <label for="formEndDate">Fecha/Hora de Fin</label>
+          <input type="datetime-local" id="formEndDate" required>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="formTicketCategory">Categoría Ticket</label>
+          <select id="formTicketCategory" required>
+            <option value="Estaciones de Trabajo" selected>Estaciones de Trabajo</option>
+            <option value="Redes">Redes</option>
+            <option value="Servidores">Servidores</option>
+            <option value="Soporte de Software">Soporte de Software</option>
+            <option value="Impresoras">Impresoras</option>
+            <option value="Cuentas y Accesos">Cuentas y Accesos</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="summaryPreview">Resumen (Auto-generado)</label>
+          <input type="text" id="summaryPreview" readonly style="background: rgba(255,255,255,0.02); color: var(--muted); cursor: not-allowed;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="formDescription">Descripción / Comentarios de Visita</label>
+        <textarea id="formDescription" rows="3" placeholder="Detalles de la visita..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button type="button" class="action-btn-small" style="background: rgba(255,255,255,0.05);" onclick="closeModal('createVisitModal');">Cancelar</button>
+        <button type="submit" id="submitVisitBtn" class="action-btn-small">Crear Ticket</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let calendar = null;
+  let companies = [];
+  let agents = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Cargar listas de Agentes y Empresas al iniciar
+    await Promise.all([loadAgents(), loadCompanies()]);
+
+    const calendarEl = document.getElementById('calendar');
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      locale: 'es',
+      initialView: 'dayGridMonth',
+      firstDay: 1, // Lunes
+      editable: true,
+      selectable: true,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      buttonText: {
+        today: 'Hoy',
+        month: 'Mes',
+        week: 'Semana',
+        day: 'Día'
+      },
+      events: '/api/tickets/visits',
+      loading: (isLoading) => {
+        document.getElementById('calendarLoader').style.display = isLoading ? 'flex' : 'none';
+      },
+      eventClassNames: (arg) => {
+        // Asignar color según estado del ticket
+        const status = (arg.event.extendedProps.status || '').toLowerCase().trim();
+        if (status === 'abierto' || status === 'por hacer' || status === 'backlog') return ['event-abierto'];
+        if (status === 'en progreso' || status === 'desarrollo' || status === 'in progress') return ['event-en-progreso'];
+        if (status === 'resuelto' || status === 'terminado' || status === 'done' || status === 'resolved') return ['event-resuelto'];
+        if (status === 'pendiente' || status === 'espera' || status === 'waiting') return ['event-pendiente'];
+        if (status === 'cerrado' || status === 'cancelado' || status === 'closed') return ['event-cerrado'];
+        return ['event-default'];
+      },
+      eventClick: (info) => {
+        openEditModal(info.event);
+      },
+      select: (info) => {
+        // Al arrastrar en celdas vacías del calendario
+        const startStr = info.startStr.slice(0, 16);
+        let endStr = info.endStr.slice(0, 16);
+        // Si es selección de mes entero o fecha completa sin hora, ajustar para que sea un rango razonable
+        if (startStr.length === 10) {
+          openCreateModal(startStr + 'T09:00', startStr + 'T10:00');
+        } else {
+          openCreateModal(startStr, endStr);
+        }
+      },
+      eventDrop: async (info) => {
+        await handleDragResize(info.event, info.revert);
+      },
+      eventResize: async (info) => {
+        await handleDragResize(info.event, info.revert);
+      }
+    });
+
+    calendar.render();
+  });
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    
+    // Clear notices
+    const notices = ['modalNotice', 'createNotice'];
+    notices.forEach(nid => {
+      const el = document.getElementById(nid);
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  // Cargar agentes en los select
+  async function loadAgents() {
+    try {
+      const res = await fetch('/api/agents');
+      if (!res.ok) throw new Error('No se pudo cargar agentes.');
+      agents = await res.json();
+      
+      const selects = ['editVisitAssignee', 'formAssignee'];
+      selects.forEach(sid => {
+        const select = document.getElementById(sid);
+        select.innerHTML = '<option value="">Selecciona Agente...</option>' +
+          agents.map(a => `<option value="${a.jira_account_id}">${escapeHtml(a.name)}</option>`).join('');
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Cargar empresas en los select
+  async function loadCompanies() {
+    try {
+      const res = await fetch('/api/client-companies');
+      if (!res.ok) throw new Error('No se pudo cargar empresas.');
+      companies = await res.json();
+      
+      const select = document.getElementById('formCompany');
+      select.innerHTML = '<option value="">Selecciona Empresa...</option>' +
+        companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Cambiar informadores al cambiar de empresa en creación
+  function handleCompanyChange() {
+    const companyId = parseInt(document.getElementById('formCompany').value, 10);
+    const informerSelect = document.getElementById('formInformer');
+    informerSelect.innerHTML = '<option value="">Selecciona Informador...</option>';
+    
+    if (!companyId) {
+      updateSummaryPreview();
+      return;
+    }
+
+    const company = companies.find(c => c.id === companyId);
+    if (company && company.informers && company.informers.length) {
+      informerSelect.innerHTML = '<option value="">Selecciona Informador...</option>' +
+        company.informers.map(inf => `<option value="${inf.id}">${escapeHtml(inf.name)}</option>`).join('');
+    }
+    
+    updateSummaryPreview();
+  }
+
+  // Actualizar preview de resumen
+  function updateSummaryPreview() {
+    const companySelect = document.getElementById('formCompany');
+    const companyText = companySelect.options[companySelect.selectedIndex]?.text || '';
+    const dateVal = document.getElementById('formStartDate').value;
+    
+    if (!dateVal || !companySelect.value) {
+      document.getElementById('summaryPreview').value = 'Visita [Fecha] [Empresa]';
+      return;
+    }
+
+    const dt = new Date(dateVal);
+    const day = String(dt.getDate()).padStart(2, '0');
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const year = dt.getFullYear();
+    
+    document.getElementById('summaryPreview').value = `Visita ${day}-${month}-${year} ${companyText.toUpperCase()}`;
+  }
+
+  // Abrir Modal de Creación
+  function openCreateModal(startStr = null, endStr = null) {
+    document.getElementById('createVisitForm').reset();
+    document.getElementById('formInformer').innerHTML = '<option value="">Selecciona Informador...</option>';
+    
+    if (startStr && endStr) {
+      document.getElementById('formStartDate').value = startStr;
+      document.getElementById('formEndDate').value = endStr;
+    } else {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('formStartDate').value = now.toISOString().slice(0, 16);
+
+      const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
+      oneHourLater.setMinutes(oneHourLater.getMinutes() - oneHourLater.getTimezoneOffset());
+      document.getElementById('formEndDate').value = oneHourLater.toISOString().slice(0, 16);
+    }
+    
+    updateSummaryPreview();
+    openModal('createVisitModal');
+  }
+
+  // Crear visita
+  async function submitVisitCreate(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitVisitBtn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span>Creando...';
+    
+    const notice = document.getElementById('createNotice');
+    notice.style.display = 'none';
+
+    const payload = {
+      company_id: parseInt(document.getElementById('formCompany').value, 10),
+      informer_id: parseInt(document.getElementById('formInformer').value, 10),
+      assignee_account_id: document.getElementById('formAssignee').value || null,
+      start_date: new Date(document.getElementById('formStartDate').value).toISOString(),
+      end_date: new Date(document.getElementById('formEndDate').value).toISOString(),
+      service_level: document.getElementById('formServiceLevel').value,
+      ticket_category: document.getElementById('formTicketCategory').value,
+      description: document.getElementById('formDescription').value.trim() || null
+    };
+
+    try {
+      const res = await fetch('/api/tickets/create-visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Fallo al crear ticket en JIRA.');
+
+      closeModal('createVisitModal');
+      calendar.refetchEvents();
+    } catch (err) {
+      notice.textContent = err.message;
+      notice.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+
+  // Abrir Modal de Edición
+  function openEditModal(event) {
+    const props = event.extendedProps;
+    document.getElementById('editVisitKey').value = event.id;
+    document.getElementById('editVisitKeyDisplay').value = event.id;
+    document.getElementById('editVisitClient').value = props.client || 'Sin Empresa';
+    document.getElementById('editJiraLink').href = `{{ jira_base_url }}/browse/${event.id}`;
+    
+    // Parse datetimes to datetime-local
+    const startStr = formatToLocalDatetimeString(event.start);
+    const endStr = formatToLocalDatetimeString(event.end || event.start);
+    document.getElementById('editVisitStartDate').value = startStr;
+    document.getElementById('editVisitEndDate').value = endStr;
+    
+    document.getElementById('editVisitAssignee').value = props.agent_account_id || '';
+    document.getElementById('editVisitServiceLevel').value = props.service_level || 'L1/L2';
+    document.getElementById('editVisitCategory').value = props.ticket_category || 'Estaciones de Trabajo';
+    
+    // Clean description lines of metadata lines (Inicio, Término, Profesional, Cliente)
+    const rawDesc = props.description || '';
+    const cleanLines = rawDesc.split('\n').filter(line => {
+      const clean = line.trim();
+      return !(clean.startsWith('Profesional Asignado:') || clean.startsWith('Cliente:') || clean.startsWith('Inicio:') || clean.startsWith('Término:'));
+    });
+    document.getElementById('editVisitDescription').value = cleanLines.join('\n').trim();
+
+    openModal('editVisitModal');
+  }
+
+  // Modificar visita desde Modal
+  async function submitVisitEdit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveVisitBtn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span>Guardando...';
+
+    const notice = document.getElementById('modalNotice');
+    notice.style.display = 'none';
+
+    const key = document.getElementById('editVisitKey').value;
+    const payload = {
+      start_date: new Date(document.getElementById('editVisitStartDate').value).toISOString(),
+      end_date: new Date(document.getElementById('editVisitEndDate').value).toISOString(),
+      assignee_account_id: document.getElementById('editVisitAssignee').value || null,
+      description: document.getElementById('editVisitDescription').value.trim() || null,
+      service_level: document.getElementById('editVisitServiceLevel').value,
+      ticket_category: document.getElementById('editVisitCategory').value
+    };
+
+    try {
+      const res = await fetch(`/api/tickets/visits/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Fallo al guardar cambios en JIRA.');
+
+      closeModal('editVisitModal');
+      calendar.refetchEvents();
+    } catch (err) {
+      notice.textContent = err.message;
+      notice.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+
+  // Drag & Drop / Resize
+  async function handleDragResize(event, revertFunc) {
+    const key = event.id;
+    const props = event.extendedProps;
+    
+    const payload = {
+      start_date: event.start.toISOString(),
+      end_date: (event.end || new Date(event.start.getTime() + 60 * 60 * 1000)).toISOString(),
+      assignee_account_id: props.agent_account_id || null,
+      description: props.description || null,
+      service_level: props.service_level || 'L1/L2',
+      ticket_category: props.ticket_category || 'Estaciones de Trabajo'
+    };
+
+    try {
+      const res = await fetch(`/api/tickets/visits/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Fallo al mover visita en JIRA.');
+      }
+      calendar.refetchEvents();
+    } catch (err) {
+      alert(err.message);
+      revertFunc();
+    }
+  }
+
+  // Auxiliares
+  function formatToLocalDatetimeString(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+# Caddyfile para producción con HTTPS automático
+# Reemplaza 'tu-dominio.com' por tu dominio público o subdominio.
+#
+# tu-dominio.com {
+#     reverse_proxy app:8000
+# }
+
+:80 {
+    reverse_proxy app:8000
+}

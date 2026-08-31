@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - {{ request.app.title }}{% endblock %}
+
+{% block extra_css %}
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .config-card {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .config-card h3 {
+      margin: 0 0 4px 0;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .config-card h3 svg {
+      color: var(--accent);
+    }
+    .config-card .card-subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .form-group {
+      display: grid;
+      gap: 8px;
+      position: relative;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrapper input {
+      width: 100%;
+      padding-right: 48px;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      box-shadow: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+    .eye-btn:hover {
+      color: #fff;
+      transform: none;
+      box-shadow: none;
+    }
+    .button-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .test-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      box-shadow: none;
+    }
+    .test-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.05);
+    }
+    .notice-bar {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-size: 0.9rem;
+      display: none;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.3s ease-out;
+    }
+    .notice-bar.success {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+    .notice-bar.error {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+    .notice-bar.info {
+      background: rgba(14, 165, 233, 0.08);
+      border-color: rgba(14, 165, 233, 0.2);
+      color: var(--accent);
+    }
+    .loader {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+{% endblock %}
+
+{% block content %}
+    <section class="hero">
+      <h1>Configuración del Sistema</h1>
+      <p>Administra las variables de conexión con Jira, mapeo de campos customizados e intervalos de ejecución.</p>
+    </section>
+
+    <div id="statusNotice" class="notice-bar"></div>
+
+    <form id="configForm" onsubmit="event.preventDefault();">
+      <div class="config-grid">
+        
+        <!-- Credenciales de Jira -->
+        <div class="panel config-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Conexión con Jira
+          </h3>
+          <div class="card-subtitle">Credenciales y endpoint de conexión a la API Cloud de Atlassian.</div>
+          
+          <div class="form-group">
+            <label for="jiraBaseUrl">Jira Base URL</label>
+            <input type="url" id="jiraBaseUrl" name="jira_base_url" value="{{ settings.jira_base_url }}" required placeholder="https://tu-organizacion.atlassian.net">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraEmail">Email de Cuenta</label>
+            <input type="email" id="jiraEmail" name="jira_email" value="{{ settings.jira_email }}" required placeholder="nombre@empresa.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraApiToken">API Token</label>
+            <div class="input-wrapper">
+              <input type="password" id="jiraApiToken" name="jira_api_token" value="{{ settings.jira_api_token }}" required placeholder="Ingresa tu API Token de Jira">
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('jiraApiToken', 'eyeIcon')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraJql">JQL de Sincronización</label>
+            <input type="text" id="jiraJql" name="jira_jql" value="{{ settings.jira_jql }}" required placeholder="project = HD ORDER BY updated DESC">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraProjectKey">Clave del Proyecto JIRA</label>
+            <input type="text" id="jiraProjectKey" name="jira_project_key" value="{{ settings.jira_project_key }}" required placeholder="MABC">
+          </div>
+        </div>
+
+        <!-- Mapeo de Campos Custom -->
+        <div class="panel config-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+            Mapeo de Campos
+          </h3>
+          <div class="card-subtitle">IDs internos de campos personalizados (Custom Fields) definidos en tu Jira Service Management.</div>
+          
+          <div class="form-group">
+            <label for="jiraOrganizationFieldId">Custom Field ID: Organización</label>
+            <input type="text" id="jiraOrganizationFieldId" name="jira_organization_field_id" value="{{ settings.jira_organization_field_id }}" required placeholder="customfield_10002">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraClientFieldId">Custom Field ID: Cliente</label>
+            <input type="text" id="jiraClientFieldId" name="jira_client_field_id" value="{{ settings.jira_client_field_id }}" required placeholder="customfield_10495">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraServiceLevelFieldId">Custom Field ID: Nivel de Servicio</label>
+            <input type="text" id="jiraServiceLevelFieldId" name="jira_service_level_field_id" value="{{ settings.jira_service_level_field_id }}" required placeholder="customfield_10528">
+          </div>
+          
+          <div class="form-group">
+            <label for="jiraTipoAtencionFieldId">Custom Field ID: Tipo de Atención</label>
+            <input type="text" id="jiraTipoAtencionFieldId" name="jira_tipo_atencion_field_id" value="{{ settings.jira_tipo_atencion_field_id }}" required placeholder="customfield_10561">
+          </div>
+
+          <div class="form-group">
+            <label for="jiraCategoriaTicketFieldId">Custom Field ID: Categoría Ticket</label>
+            <input type="text" id="jiraCategoriaTicketFieldId" name="jira_categoria_ticket_field_id" value="{{ settings.jira_categoria_ticket_field_id }}" required placeholder="customfield_10396">
+          </div>
+
+          <div class="form-group">
+            <label for="jiraFechaInicioFieldId">Custom Field ID: Fecha de Inicio</label>
+            <input type="text" id="jiraFechaInicioFieldId" name="jira_fecha_inicio_field_id" value="{{ settings.jira_fecha_inicio_field_id }}" required placeholder="customfield_10015">
+          </div>
+
+        </div>
+
+        <!-- Parámetros Generales -->
+        <div class="panel config-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Parámetros y Tareas
+          </h3>
+          <div class="card-subtitle">Parámetros operativos de horas laborales y planificación de la sincronización en segundo plano.</div>
+          
+          <div class="form-group">
+            <label for="weeklyHours">Horas Semanales de Capacidad</label>
+            <input type="number" id="weeklyHours" name="weekly_hours" value="{{ settings.weekly_hours }}" required min="1" max="168">
+          </div>
+          
+          <div class="form-group">
+            <label for="dailyHours">Horas Diarias Laborales</label>
+            <input type="number" id="dailyHours" name="daily_hours" value="{{ settings.daily_hours }}" required min="1" max="24">
+          </div>
+          
+          <div class="form-group">
+            <label for="syncIntervalHours">Intervalo de Sincronización (Horas)</label>
+            <input type="number" id="syncIntervalHours" name="sync_interval_hours" value="{{ settings.sync_interval_hours }}" required min="1" max="720">
+          </div>
+        </div>
+
+        <!-- Notificaciones Telegram -->
+        <div class="panel config-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+            Telegram
+          </h3>
+          <div class="card-subtitle">Envío de alertas y resúmenes de sincronización a través de un Bot de Telegram.</div>
+          
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="telegramEnabled" name="telegram_enabled" {% if settings.telegram_enabled %}checked{% endif %} style="width: auto;">
+            <label for="telegramEnabled" style="margin: 0; cursor: pointer;">Habilitar Notificaciones Telegram</label>
+          </div>
+          
+          <div class="form-group">
+            <label for="telegramBotToken">Telegram Bot Token</label>
+            <div class="input-wrapper">
+              <input type="password" id="telegramBotToken" name="telegram_bot_token" value="{{ settings.telegram_bot_token }}" placeholder="123456789:ABCdefGhIJKlmNoPQRsT">
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('telegramBotToken', 'eyeIconTelegram')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeIconTelegram"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="telegramChatId">Telegram Chat ID</label>
+            <input type="text" id="telegramChatId" name="telegram_chat_id" value="{{ settings.telegram_chat_id }}" placeholder="-100123456789 o 123456789">
+          </div>
+        </div>
+
+        <!-- Notificaciones Correo (SMTP) -->
+        <div class="panel config-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            Correo Electrónico (SMTP)
+          </h3>
+          <div class="card-subtitle">Envío de alertas de sincronización a casillas de correo usando un servidor de correo SMTP.</div>
+          
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="emailEnabled" name="email_enabled" {% if settings.email_enabled %}checked{% endif %} style="width: auto;">
+            <label for="emailEnabled" style="margin: 0; cursor: pointer;">Habilitar Notificaciones por Correo</label>
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpHost">Servidor SMTP (Host)</label>
+            <input type="text" id="smtpHost" name="smtp_host" value="{{ settings.smtp_host }}" placeholder="smtp.gmail.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpPort">Puerto SMTP</label>
+            <input type="number" id="smtpPort" name="smtp_port" value="{{ settings.smtp_port }}" placeholder="587">
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpUser">Usuario SMTP (Correo)</label>
+            <input type="text" id="smtpUser" name="smtp_user" value="{{ settings.smtp_user }}" placeholder="usuario@gmail.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpPassword">Contraseña SMTP</label>
+            <div class="input-wrapper">
+              <input type="password" id="smtpPassword" name="smtp_password" value="{{ settings.smtp_password }}" placeholder="Tu contraseña de aplicación">
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('smtpPassword', 'eyeIconSMTP')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeIconSMTP"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="emailFrom">Correo Emisor (From)</label>
+            <input type="email" id="emailFrom" name="email_from" value="{{ settings.email_from }}" placeholder="remitente@correo.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="emailTo">Correo Receptor (To)</label>
+            <input type="text" id="emailTo" name="email_to" value="{{ settings.email_to }}" placeholder="destinatario@correo.com, otro@correo.com">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="button-group">
+        <button type="button" id="testConnBtn" class="test-btn" onclick="testJiraConnection()">
+          Probar Conexión Jira
+        </button>
+        <button type="button" id="testTelegramBtn" class="test-btn" onclick="testTelegramConnection()">
+          Probar Telegram
+        </button>
+        <button type="button" id="testEmailBtn" class="test-btn" onclick="testEmailConnection()">
+          Probar Correo
+        </button>
+        <button type="submit" id="saveConfigBtn" onclick="saveConfiguration()">
+          Guardar Cambios
+        </button>
+      </div>
+    </form>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    function togglePasswordVisibility(fieldId, iconId = 'eyeIcon') {
+      const input = document.getElementById(fieldId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      } else {
+        input.type = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+      }
+    }
+
+    function showNotice(msg, tone = 'info') {
+      const notice = document.getElementById('statusNotice');
+      notice.innerHTML = msg;
+      notice.className = `notice-bar ${tone}`;
+      notice.style.display = 'block';
+      notice.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function getFormData() {
+      return {
+        jira_base_url: document.getElementById('jiraBaseUrl').value,
+        jira_email: document.getElementById('jiraEmail').value,
+        jira_api_token: document.getElementById('jiraApiToken').value,
+        jira_jql: document.getElementById('jiraJql').value,
+        jira_organization_field_id: document.getElementById('jiraOrganizationFieldId').value,
+        jira_client_field_id: document.getElementById('jiraClientFieldId').value,
+        jira_service_level_field_id: document.getElementById('jiraServiceLevelFieldId').value,
+        jira_project_key: document.getElementById('jiraProjectKey').value,
+        jira_tipo_atencion_field_id: document.getElementById('jiraTipoAtencionFieldId').value,
+        jira_categoria_ticket_field_id: document.getElementById('jiraCategoriaTicketFieldId').value,
+        jira_fecha_inicio_field_id: document.getElementById('jiraFechaInicioFieldId').value,
+        weekly_hours: parseInt(document.getElementById('weeklyHours').value, 10),
+        daily_hours: parseInt(document.getElementById('dailyHours').value, 10),
+        sync_interval_hours: parseInt(document.getElementById('syncIntervalHours').value, 10),
+        telegram_enabled: document.getElementById('telegramEnabled').checked,
+        telegram_bot_token: document.getElementById('telegramBotToken').value,
+        telegram_chat_id: document.getElementById('telegramChatId').value,
+        email_enabled: document.getElementById('emailEnabled').checked,
+        smtp_host: document.getElementById('smtpHost').value,
+        smtp_port: parseInt(document.getElementById('smtpPort').value, 10) || 587,
+        smtp_user: document.getElementById('smtpUser').value,
+        smtp_password: document.getElementById('smtpPassword').value,
+        email_from: document.getElementById('emailFrom').value,
+        email_to: document.getElementById('emailTo').value
+      };
+    }
+
+    async function testJiraConnection() {
+      const btn = document.getElementById('testConnBtn');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span>Probando...';
+      showNotice('Comprobando conectividad con Jira Cloud...', 'info');
+
+      try {
+        const payload = getFormData();
+        const response = await fetch('/api/settings/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (response.ok && result.status === 'ok') {
+          showNotice(`<strong>¡Conexión Exitosa!</strong> Se ha verificado el acceso a Jira exitosamente. Proyecto y credenciales válidos.`, 'success');
+        } else {
+          showNotice(`<strong>Error de Conexión:</strong> ${result.detail || 'Fallo de autenticación.'}`, 'error');
+        }
+      } catch (err) {
+        showNotice(`<strong>Error:</strong> No se pudo contactar al servidor de reportes local.`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    async function testTelegramConnection() {
+      const btn = document.getElementById('testTelegramBtn');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span>Probando...';
+      showNotice('Comprobando envío de mensaje por Telegram...', 'info');
+
+      try {
+        const payload = {
+          telegram_bot_token: document.getElementById('telegramBotToken').value,
+          telegram_chat_id: document.getElementById('telegramChatId').value
+        };
+        const response = await fetch('/api/settings/test-telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (response.ok && result.status === 'ok') {
+          showNotice(`<strong>¡Prueba de Telegram Exitosa!</strong> Se ha enviado el mensaje al chat.`, 'success');
+        } else {
+          showNotice(`<strong>Error de Telegram:</strong> ${result.detail || 'Fallo de envío.'}`, 'error');
+        }
+      } catch (err) {
+        showNotice(`<strong>Error:</strong> No se pudo contactar al servidor de reportes local.`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    async function testEmailConnection() {
+      const btn = document.getElementById('testEmailBtn');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span>Probando...';
+      showNotice('Comprobando envío de correo SMTP...', 'info');
+
+      try {
+        const payload = {
+          smtp_host: document.getElementById('smtpHost').value,
+          smtp_port: parseInt(document.getElementById('smtpPort').value, 10) || 587,
+          smtp_user: document.getElementById('smtpUser').value,
+          smtp_password: document.getElementById('smtpPassword').value,
+          email_from: document.getElementById('emailFrom').value,
+          email_to: document.getElementById('emailTo').value
+        };
+        const response = await fetch('/api/settings/test-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (response.ok && result.status === 'ok') {
+          showNotice(`<strong>¡Prueba de Correo Exitosa!</strong> Se ha enviado el correo de prueba al destinatario.`, 'success');
+        } else {
+          showNotice(`<strong>Error de Correo:</strong> ${result.detail || 'Fallo de envío.'}`, 'error');
+        }
+      } catch (err) {
+        showNotice(`<strong>Error:</strong> No se pudo contactar al servidor de reportes local.`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    async function saveConfiguration() {
+      // Validate form first
+      const form = document.getElementById('configForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const btn = document.getElementById('saveConfigBtn');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span>Guardando...';
+
+      try {
+        const payload = getFormData();
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          showNotice(`<strong>¡Configuración Guardada!</strong> Los parámetros se han actualizado en el archivo de configuración. El servidor se reiniciará automáticamente en segundo plano en breve para aplicar los cambios del programador.`, 'success');
+          // Wait 3 seconds and reload the page to get the fresh settings from settings object
+          setTimeout(() => { window.location.reload(); }, 3000);
+        } else {
+          showNotice(`<strong>Error al Guardar:</strong> ${result.detail || 'No se pudieron guardar los parámetros.'}`, 'error');
+        }
+      } catch (err) {
+        showNotice(`<strong>Error:</strong> No se pudo contactar al servidor de reportes local.`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+  </script>
+{% endblock %}

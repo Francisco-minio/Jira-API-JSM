@@ -1,0 +1,1292 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+    .charts { display: grid; gap: 24px; }
+    .chart-card { padding: 24px; }
+    .table-card { padding: 24px; overflow: auto; }
+    .weekly-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .weekly-card {
+      padding: 24px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      display: grid;
+      gap: 12px;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .weekly-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .weekly-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .weekly-head h4 {
+      margin: 4px 0 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -.02em;
+    }
+    .weekly-pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: .85rem;
+      white-space: nowrap;
+    }
+    .weekly-summary {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.6;
+      font-size: .98rem;
+    }
+    .weekly-chart-wrap {
+      margin-top: 16px;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--panel-border);
+    }
+    .weekly-mini-chart {
+      display: grid;
+      gap: 16px;
+    }
+    .weekly-mini-row {
+      display: grid;
+      gap: 8px;
+    }
+    .weekly-mini-row-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .weekly-mini-row-head strong {
+      color: var(--text);
+    }
+    .weekly-mini-track {
+      position: relative;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .weekly-mini-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      border-radius: inherit;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .weekly-mini-fill.capacity {
+      background: rgba(16, 185, 129, 0.2);
+    }
+    .weekly-mini-fill.hours {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+    }
+    .weekly-mini-fill.l3 {
+      background: linear-gradient(90deg, #ec4899, #8b5cf6);
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.4);
+    }
+    .weekly-mini-fill.hours.over, .weekly-mini-fill.l3.over {
+      background: linear-gradient(90deg, var(--warn), var(--danger));
+    }
+    .weekly-mini-caption {
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .weekly-progress {
+      display: grid;
+      gap: 8px;
+    }
+    .weekly-progress-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .weekly-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .weekly-progress-fill.over {
+      background: linear-gradient(90deg, var(--warn), var(--danger));
+    }
+    .weekly-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .weekly-meta span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+      font-size: .8rem;
+    }
+    .weekly-toplist {
+      display: grid;
+      gap: 8px;
+    }
+    .weekly-topitem {
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 8px; }
+    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--panel-border); }
+    tbody tr { transition: all 0.2s ease; border-radius: 8px; }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.03); transform: scale(1.002); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    th { color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.1); }
+    .small { font-size: .9rem; color: var(--muted); }
+    .notice {
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.2);
+      color: var(--text);
+      margin-bottom: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    canvas { min-height: 280px; max-height: 340px; }
+    @media (max-width: 1100px) {
+      .hero, .grid, .stats { grid-template-columns: 1fr; }
+    }
+
+    /* Estilos del Informe Ejecutivo para Impresión y PDF */
+    .print-only { display: none !important; }
+    
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #1a202c !important;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        font-size: 10pt !important;
+        line-height: 1.5 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .main-content > *:not(#printArea) {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      #printArea {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+      #printArea a {
+        color: #0284c7 !important;
+        text-decoration: none !important;
+      }
+      @page {
+        size: portrait;
+        margin: 1.6cm 1.2cm;
+      }
+      h1, h2, h3, h4 {
+        color: #0c182c !important;
+        page-break-after: avoid;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px !important;
+        margin-bottom: 25px !important;
+        page-break-inside: auto !important;
+      }
+      tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+      }
+      th {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-bottom: 2px solid #cbd5e1 !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        font-size: 8pt !important;
+        padding: 10px 8px !important;
+        text-align: left !important;
+      }
+      td {
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 9px 8px !important;
+        color: #334155 !important;
+        font-size: 8.5pt !important;
+      }
+      .print-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 3px solid #0f172a;
+        padding-bottom: 12px;
+        margin-bottom: 25px;
+      }
+      .print-logo-title {
+        font-size: 20pt;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .print-subtitle {
+        font-size: 10pt;
+        color: #64748b;
+        margin-top: 4px;
+      }
+      .print-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 25px;
+        border: 1px solid #e2e8f0;
+        padding: 12px;
+        border-radius: 6px;
+        background-color: #f8fafc;
+      }
+      .print-meta-item {
+        font-size: 9pt;
+        color: #475569;
+      }
+      .print-meta-item strong {
+        color: #0f172a;
+      }
+      .print-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 25px;
+      }
+      .print-stat-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        text-align: center;
+        background: #f8fafc;
+      }
+      .print-stat-label {
+        font-size: 8pt;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .print-stat-value {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .print-section {
+        margin-bottom: 30px;
+      }
+      .print-section-title {
+        font-size: 12pt;
+        font-weight: 700;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 4px;
+        margin-bottom: 12px;
+        color: #0f172a;
+      }
+      .print-footer {
+        margin-top: 40px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 8pt;
+        color: #94a3b8;
+      }
+      .signature-block {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+        margin-top: 50px;
+        page-break-inside: avoid;
+      }
+      .signature-line {
+        border-top: 1px solid #94a3b8;
+        text-align: center;
+        padding-top: 6px;
+        font-size: 9pt;
+        color: #475569;
+        line-height: 1.4;
+      }
+    }
+{% endblock %}
+
+{% block content %}
+    <section class="hero">
+      <div>
+        <h1>Reporte Jira Service Management</h1>
+        <p>Horas por agente, incidencias, organizaciones y capacidad semanal de 40 horas, excluyendo festivos chilenos.</p>
+      </div>
+      <div class="panel filters">
+        <div class="field">
+          <label>Desde</label>
+          <input id="fromDate" type="date" value="{{ default_from }}">
+        </div>
+        <div class="field">
+          <label>Hasta</label>
+          <input id="toDate" type="date" value="{{ default_to }}">
+        </div>
+        <div class="field" style="min-width: 260px;">
+          <label>Organización</label>
+          <select id="organizationSelect"></select>
+        </div>
+        <div class="field" style="min-width: 260px;">
+          <label>Cliente</label>
+          <select id="ticketClientSelect"></select>
+        </div>
+        <button id="refreshBtn">Actualizar</button>
+      </div>
+    </section>
+
+    <div id="syncNotice" class="notice" style="display:none; margin-bottom: 18px;"></div>
+
+    <section class="stats">
+      <div class="panel stat"><div class="label">Horas registradas</div><div class="value" id="hoursLogged">-</div></div>
+      <div class="panel stat"><div class="label">Capacidad esperada</div><div class="value" id="capacity">-</div></div>
+      <div class="panel stat"><div class="label">Utilización</div><div class="value" id="utilization">-</div></div>
+      <div class="panel stat"><div class="label">Incidencias</div><div class="value" id="incidents">-</div></div>
+    </section>
+
+    <section class="panel table-card" style="margin-top: 18px;">
+      <div style="display: flex; justify-content: space-between; gap: 12px; align-items: end; flex-wrap: wrap;">
+        <div>
+          <h3 style="margin-bottom: 6px;">Resumen semanal</h3>
+          <div class="small">Cada tarjeta considera lunes a viernes y omite los feriados chilenos para el cálculo de capacidad.</div>
+        </div>
+      </div>
+      <div class="weekly-chart-wrap">
+        <div id="weeklyChart" class="weekly-mini-chart"></div>
+      </div>
+      <div id="weeklySummaryGrid" class="weekly-grid"></div>
+    </section>
+
+    <section class="panel table-card" style="margin-top: 18px;">
+      <div style="display: flex; justify-content: space-between; gap: 12px; align-items: end; flex-wrap: wrap;">
+        <div>
+          <h3 style="margin-bottom: 6px;">Nivel de servicio</h3>
+          <div class="small">Horas y tickets por categoría de servicio. El XML que mostraste corresponde a `L1`.</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nivel</th>
+            <th>Horas</th>
+            <th>Tickets registrados</th>
+            <th>Tickets atendidos</th>
+            <th>Incidencias</th>
+          </tr>
+        </thead>
+        <tbody id="serviceLevelTable"></tbody>
+      </table>
+    </section>
+
+    <section id="clientDetailSection" class="panel table-card" style="margin-top: 18px; display: none;">
+      <div style="display: flex; justify-content: space-between; gap: 12px; align-items: end; flex-wrap: wrap;">
+        <div>
+          <h3 id="clientTitle" style="margin-bottom: 6px;">Cliente</h3>
+          <div class="small" id="clientSubtitle">Selecciona un cliente para ver su consumo y tickets relacionados.</div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="printReportBtn" style="background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #082130; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border: none; font-size: 0.9rem; border-radius: 12px; font-weight: 700; cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Informe Ejecutivo
+          </button>
+          <button id="exportCsvBtn" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(159, 178, 208, 0.2); color: var(--text); display: flex; align-items: center; gap: 6px; padding: 10px 16px; font-size: 0.9rem; border-radius: 12px; font-weight: 600; cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Exportar Tickets
+          </button>
+          <a href="/api/clients/export" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(159, 178, 208, 0.2); color: var(--text); display: flex; align-items: center; gap: 6px; padding: 10px 16px; font-size: 0.9rem; border-radius: 12px; font-weight: 600; cursor: pointer; text-decoration: none;" title="Exportar directorio completo de clientes y correos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Exportar Clientes y Correos
+          </a>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="panel stat"><div class="label">Horas del cliente</div><div class="value" id="clientHours">-</div></div>
+        <div class="panel stat"><div class="label">Tickets registrados</div><div class="value" id="clientRegistered">-</div></div>
+        <div class="panel stat"><div class="label">Tickets atendidos</div><div class="value" id="clientAttended">-</div></div>
+        <div class="panel stat"><div class="label">Incidencias</div><div class="value" id="clientIncidents">-</div></div>
+      </div>
+      <div class="small" style="margin-bottom: 10px;">Detalle de tickets y horas registradas por cliente.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Organización</th>
+            <th>Cliente</th>
+            <th>Nivel</th>
+            <th>Resumen</th>
+            <th>Estado</th>
+            <th>Asignado</th>
+            <th>Horas</th>
+            <th>Worklogs</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody id="clientTicketTable"></tbody>
+      </table>
+      <div id="clientPaginationControls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 12px;">
+        <div id="clientPaginationInfo" class="small" style="color: var(--muted);">Mostrando 0-0 de 0 tickets</div>
+        <div style="display: flex; gap: 8px;">
+          <button id="clientPrevPageBtn" style="padding: 8px 16px; border-radius: 10px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.04); color: var(--text); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Anterior</button>
+          <button id="clientNextPageBtn" style="padding: 8px 16px; border-radius: 10px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.04); color: var(--text); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Siguiente</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="organizationDetailSection" class="panel table-card" style="margin-top: 18px;">
+      <div style="display: flex; justify-content: space-between; gap: 12px; align-items: end; flex-wrap: wrap;">
+        <div>
+          <h3 id="organizationTitle" style="margin-bottom: 6px;">Organización</h3>
+          <div class="small" id="organizationSubtitle">Selecciona una organización con actividad para ver horas y tickets relacionados.</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="panel stat"><div class="label">Horas de la organización</div><div class="value" id="organizationHours">-</div></div>
+        <div class="panel stat"><div class="label">Tickets registrados</div><div class="value" id="organizationRegistered">-</div></div>
+        <div class="panel stat"><div class="label">Tickets atendidos</div><div class="value" id="organizationAttended">-</div></div>
+        <div class="panel stat"><div class="label">Incidencias</div><div class="value" id="organizationIncidents">-</div></div>
+      </div>
+      <div class="small" style="margin-bottom: 10px;">Detalle de tickets y horas registradas por ticket.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Organización</th>
+            <th>Cliente</th>
+            <th>Nivel</th>
+            <th>Resumen</th>
+            <th>Estado</th>
+            <th>Asignado</th>
+            <th>Horas</th>
+            <th>Worklogs</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody id="organizationTicketTable"></tbody>
+      </table>
+    </section>
+
+    <section class="grid">
+      <div class="charts">
+        <div class="panel chart-card">
+          <h3>Horas por día</h3>
+          <canvas id="dailyChart"></canvas>
+        </div>
+        <div class="panel chart-card">
+          <h3>Horas por mes</h3>
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
+      <div class="panel table-card">
+        <h3>Agentes</h3>
+        <div class="small">Horas, incidentes y organizaciones atendidas en el periodo.</div>
+        <div id="chartNotice" class="notice" style="display:none;"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Agente</th>
+              <th>Horas</th>
+              <th>Incidentes</th>
+              <th>Organizaciones</th>
+            </tr>
+          </thead>
+          <tbody id="agentTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="printArea" class="print-only"></div>
+
+  <script>
+    let dailyChart;
+    let monthlyChart;
+    let organizations = [];
+    let ticketClients = [];
+    let serviceLevels = [];
+    let currentClientDetail = null;
+    let clientCurrentPage = 1;
+    const clientPageSize = 10;
+
+    function fmt(n) {
+      return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(n);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function fmtDate(value) {
+      if (!value) return '-';
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const [y, m, d] = value.split('-');
+        return `${d}/${m}/${y}`;
+      }
+      return new Date(value).toLocaleDateString('es-CL');
+    }
+
+    function setSyncNotice(message, tone = 'info') {
+      const notice = document.getElementById('syncNotice');
+      if (!notice) return;
+      if (!message) {
+        notice.style.display = 'none';
+        notice.textContent = '';
+        return;
+      }
+      notice.style.display = 'block';
+      notice.textContent = message;
+      notice.style.background = tone === 'error' ? 'rgba(255, 107, 107, .08)' : 'rgba(86, 207, 225, .08)';
+      notice.style.borderColor = tone === 'error' ? 'rgba(255, 107, 107, .18)' : 'rgba(86, 207, 225, .18)';
+      notice.style.color = tone === 'error' ? 'var(--danger)' : 'var(--muted)';
+    }
+
+    function renderOrganizationDetail(detail) {
+      document.getElementById('organizationTitle').textContent = detail.organization_name || 'Organización';
+      const clientFilter = detail.client_filter || document.getElementById('ticketClientSelect').value;
+      const clientLabel = clientFilter ? clientFilter : 'Todos los clientes';
+      document.getElementById('organizationSubtitle').textContent = `Detalle del periodo seleccionado · ${clientLabel}`;
+      document.getElementById('organizationHours').textContent = fmt(detail.hours_logged || 0);
+      document.getElementById('organizationRegistered').textContent = detail.tickets_registered || 0;
+      document.getElementById('organizationAttended').textContent = detail.tickets_attended || 0;
+      document.getElementById('organizationIncidents').textContent = detail.incident_count || 0;
+
+      const tbody = document.getElementById('organizationTicketTable');
+      tbody.innerHTML = (detail.tickets || []).map(ticket => `
+        <tr>
+          <td><a href="{{ jira_base_url }}/browse/${ticket.jira_key}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">${ticket.jira_key}</a></td>
+          <td>${(ticket.organizations || []).join(', ') || '-'}</td>
+          <td>${ticket.client_text || '-'}</td>
+          <td>${ticket.service_level || '-'}</td>
+          <td>${ticket.summary}</td>
+          <td>${ticket.status}</td>
+          <td>${ticket.assignee_name || '-'}</td>
+          <td>${fmt(ticket.hours_logged || 0)}</td>
+          <td>${ticket.worklog_count || 0}</td>
+          <td>${fmtDate(ticket.created_at)}</td>
+        </tr>
+      `).join('') || `
+        <tr>
+          <td colspan="10">Sin tickets en el rango seleccionado.</td>
+        </tr>
+      `;
+    }
+
+    function renderClientTicketPage() {
+      if (!currentClientDetail || !currentClientDetail.tickets) return;
+      const tickets = currentClientDetail.tickets;
+      const totalTickets = tickets.length;
+      
+      if (totalTickets === 0) {
+        document.getElementById('clientTicketTable').innerHTML = `
+          <tr>
+            <td colspan="10">Sin tickets en el rango seleccionado.</td>
+          </tr>
+        `;
+        document.getElementById('clientPaginationControls').style.display = 'none';
+        return;
+      }
+      
+      document.getElementById('clientPaginationControls').style.display = 'flex';
+      
+      const totalPages = Math.ceil(totalTickets / clientPageSize);
+      if (clientCurrentPage > totalPages) clientCurrentPage = totalPages;
+      if (clientCurrentPage < 1) clientCurrentPage = 1;
+      
+      const startIdx = (clientCurrentPage - 1) * clientPageSize;
+      const endIdx = Math.min(startIdx + clientPageSize, totalTickets);
+      
+      const pageTickets = tickets.slice(startIdx, endIdx);
+      
+      const tbody = document.getElementById('clientTicketTable');
+      tbody.innerHTML = pageTickets.map(ticket => `
+        <tr>
+          <td><a href="{{ jira_base_url }}/browse/${ticket.jira_key}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">${ticket.jira_key}</a></td>
+          <td>${(ticket.organizations || []).join(', ') || '-'}</td>
+          <td>${ticket.client_text || '-'}</td>
+          <td>${ticket.service_level || '-'}</td>
+          <td>${ticket.summary}</td>
+          <td>${ticket.status}</td>
+          <td>${ticket.assignee_name || '-'}</td>
+          <td>${fmt(ticket.hours_logged || 0)}</td>
+          <td>${ticket.worklog_count || 0}</td>
+          <td>${fmtDate(ticket.created_at)}</td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('clientPaginationInfo').textContent = `Mostrando ${startIdx + 1}-${endIdx} de ${totalTickets} tickets`;
+      
+      const prevBtn = document.getElementById('clientPrevPageBtn');
+      const nextBtn = document.getElementById('clientNextPageBtn');
+      
+      prevBtn.disabled = (clientCurrentPage === 1);
+      nextBtn.disabled = (clientCurrentPage === totalPages);
+      
+      // Inline styles for disabled opacity
+      prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1';
+      prevBtn.style.cursor = prevBtn.disabled ? 'not-allowed' : 'pointer';
+      nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1';
+      nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : 'pointer';
+    }
+
+    function renderClientDetail(detail) {
+      currentClientDetail = detail;
+      clientCurrentPage = 1;
+      const section = document.getElementById('clientDetailSection');
+      if (!detail || !detail.client_text) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      document.getElementById('clientTitle').textContent = detail.client_text || 'Cliente';
+      document.getElementById('clientSubtitle').textContent = `Detalle del periodo seleccionado · ${detail.client_text || 'Cliente'}`;
+      document.getElementById('clientHours').textContent = fmt(detail.hours_logged || 0);
+      document.getElementById('clientRegistered').textContent = detail.tickets_registered || 0;
+      document.getElementById('clientAttended').textContent = detail.tickets_attended || 0;
+      document.getElementById('clientIncidents').textContent = detail.incident_count || 0;
+
+      renderClientTicketPage();
+    }
+
+    function renderWeeklyReport(weeks) {
+      const grid = document.getElementById('weeklySummaryGrid');
+      if (!weeks || !weeks.length) {
+        grid.innerHTML = '<div class="notice" style="grid-column: 1 / -1;">Sin semanas hábiles en el periodo seleccionado.</div>';
+        return;
+      }
+
+      grid.innerHTML = weeks.map(week => {
+        const utilization = Number(week.utilization_pct || 0);
+        const utilizationWidth = Math.min(Math.max(utilization, 0), 100);
+        const topTickets = (week.top_tickets || []).map(ticket => `
+          <div class="weekly-topitem">
+            <a href="{{ jira_base_url }}/browse/${escapeHtml(ticket.jira_key || '')}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">${escapeHtml(ticket.jira_key || '')}</a>
+            · ${escapeHtml(ticket.summary || '')}
+            · ${fmt(ticket.hours_logged || 0)} h
+            ${ticket.client_text ? `· ${escapeHtml(ticket.client_text)}` : ''}
+            ${ticket.service_level ? `· ${escapeHtml(ticket.service_level)}` : ''}
+          </div>
+        `).join('');
+        const holidays = (week.holiday_names || []).length
+          ? week.holiday_names.map(name => escapeHtml(name)).join(', ')
+          : 'Ninguno';
+        const chips = [
+          `${week.business_days || 0} días hábiles`,
+          `${fmt(week.expected_capacity_hours || 0)} h capacidad`,
+          `${week.tickets_registered || 0} registrados`,
+          `${week.tickets_attended || 0} atendidos`,
+          `${week.incidents || 0} incidencias`,
+        ].map(text => `<span>${text}</span>`).join('');
+        return `
+          <article class="weekly-card">
+            <div class="weekly-head">
+              <div>
+                <div class="small">Semana hábil</div>
+                <h4>${escapeHtml(week.label || 'Semana sin fecha')}</h4>
+              </div>
+              <span class="weekly-pill">${fmt(utilization)}%</span>
+            </div>
+            <p class="weekly-summary">${escapeHtml(week.summary || '')}</p>
+            <div class="weekly-progress">
+              <div class="weekly-progress-track">
+                <div class="weekly-progress-fill ${utilization > 100 ? 'over' : ''}" style="width: ${utilizationWidth}%;"></div>
+              </div>
+              <div class="small">${fmt(week.hours_l1_l2 || 0)} h (L1/L2) de ${fmt(week.expected_capacity_hours || 0)} h de capacidad</div>
+            </div>
+            <div class="weekly-meta">${chips}</div>
+            <div class="small">Horas: <strong>${fmt(week.hours_logged || 0)}</strong> · Capacidad: <strong>${fmt(week.expected_capacity_hours || 0)}</strong> · Feriados omitidos: <strong>${holidays}</strong></div>
+            ${topTickets ? `
+              <div class="weekly-toplist">
+                <div class="small" style="color: var(--text);">Tickets destacados</div>
+                ${topTickets}
+              </div>
+            ` : ''}
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderWeeklyChart(weeks) {
+      const container = document.getElementById('weeklyChart');
+      if (!container) {
+        return;
+      }
+
+      if (!weeks || !weeks.length) {
+        container.innerHTML = '<div class="notice" style="margin-bottom: 0;">Sin semanas hábiles en el periodo seleccionado.</div>';
+        return;
+      }
+
+      const maxCapacity = Math.max(
+        ...weeks.flatMap(week => [Number(week.hours_logged || 0), Number(week.expected_capacity_hours || 0)]),
+        1
+      );
+      container.innerHTML = weeks.map(week => {
+        const hours = Number(week.hours_logged || 0);
+        const l1l2Hours = Number(week.hours_l1_l2 || 0);
+        const l3Hours = Number(week.hours_l3 || 0);
+        const capacity = Number(week.expected_capacity_hours || 0);
+        const utilization = Number(week.utilization_pct || 0);
+        const capacityWidth = Math.max(0, Math.min((capacity / maxCapacity) * 100, 100));
+        const l1l2Width = Math.max(0, (l1l2Hours / maxCapacity) * 100);
+        const l3Width = Math.max(0, (l3Hours / maxCapacity) * 100);
+        
+        return `
+          <div class="weekly-mini-row">
+            <div class="weekly-mini-row-head">
+              <strong>${escapeHtml(week.label || 'Semana sin fecha')}</strong>
+              <span>${fmt(l1l2Hours)} h (L1/L2) de ${fmt(capacity)} h</span>
+            </div>
+            <div class="weekly-mini-track" aria-label="Comparación entre horas L1/L2 y capacidad">
+              <div class="weekly-mini-fill capacity" style="width: ${capacityWidth}%"></div>
+              <div class="weekly-mini-fill hours ${utilization > 100 ? 'over' : ''}" style="width: ${l1l2Width}%; left: 0;"></div>
+            </div>
+            
+            ${l3Hours > 0 ? `
+            <div class="weekly-mini-row-head" style="margin-top: 8px;">
+              <strong style="font-size: 0.8rem; color: var(--muted);">L3 Aparte</strong>
+              <span style="font-size: 0.8rem;">${fmt(l3Hours)} h</span>
+            </div>
+            <div class="weekly-mini-track" style="height: 6px; background: rgba(255,255,255,0.03);" aria-label="Horas L3">
+              <div class="weekly-mini-fill l3" style="width: ${l3Width}%; left: 0;"></div>
+            </div>
+            ` : ''}
+            
+            <div class="weekly-mini-caption" style="margin-top: 8px;">${fmt(utilization)}% de utilización L1/L2 · ${week.tickets_attended || 0} tickets atendidos · ${week.incidents || 0} incidencias</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadServiceLevels() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const clientText = document.getElementById('ticketClientSelect').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+      if (clientText) {
+        params.set('client_text', clientText);
+      }
+      const summary = await fetch(`/api/reports/service-levels?${params}`).then(r => r.json());
+      serviceLevels = summary;
+      const tbody = document.getElementById('serviceLevelTable');
+      if (!serviceLevels.length) {
+        tbody.innerHTML = '<tr><td colspan="5">Sin datos de nivel de servicio en el periodo.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = serviceLevels.map(item => `
+        <tr>
+          <td>${item.service_level || '-'}</td>
+          <td>${fmt(item.hours_logged || 0)}</td>
+          <td>${item.tickets_registered || 0}</td>
+          <td>${item.tickets_attended || 0}</td>
+          <td>${item.incidents || 0}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadTicketClients() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+      const previous = document.getElementById('ticketClientSelect').value;
+      const summary = await fetch(`/api/reports/ticket-clients?${params}`).then(r => r.json());
+      ticketClients = summary;
+      const select = document.getElementById('ticketClientSelect');
+      if (!ticketClients.length) {
+        select.innerHTML = '<option value="">Todos los clientes</option>';
+        select.value = '';
+        return;
+      }
+      select.innerHTML = ['<option value="">Todos los clientes</option>'].concat(
+        ticketClients.map(client => {
+          const badge = client.tickets || client.hours_logged
+            ? ` (${fmt(client.hours_logged || 0)} h, ${client.tickets || 0} tickets)`
+            : '';
+          return `<option value="${escapeHtml(client.client_text)}">${escapeHtml(client.client_text)}${badge}</option>`;
+        })
+      ).join('');
+      const optionExists = ticketClients.some(client => client.client_text === previous);
+      select.value = optionExists ? previous : '';
+    }
+
+    async function loadOrganizations() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const clientText = document.getElementById('ticketClientSelect').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+      if (clientText) {
+        params.set('client_text', clientText);
+      }
+      const summary = await fetch(`/api/reports/organizations?${params}`).then(r => r.json());
+      organizations = summary.filter(org => (org.tickets_attended || 0) > 0 || (org.hours_logged || 0) > 0 || (org.tickets_registered || 0) > 0);
+      const select = document.getElementById('organizationSelect');
+      if (!organizations.length) {
+        select.innerHTML = '<option value="">Sin organizaciones</option>';
+        renderOrganizationDetail({
+          organization_name: clientText ? `Sin organizaciones para ${clientText}` : 'Sin organizaciones',
+          client_filter: clientText || '',
+          hours_logged: 0,
+          tickets_registered: 0,
+          tickets_attended: 0,
+          incident_count: 0,
+          tickets: [],
+        });
+        return;
+      }
+
+      const previous = select.value;
+      select.innerHTML = organizations.map(org => {
+        const badge = org.tickets_attended || org.hours_logged || org.tickets_registered
+          ? ` (${fmt(org.hours_logged || 0)} h, ${org.tickets_attended || 0} tickets)`
+          : '';
+        return `<option value="${org.organization_id}">${org.organization_name}${badge}</option>`;
+      }).join('');
+      const preferred = organizations.find(org => (org.tickets_attended || 0) > 0 || (org.hours_logged || 0) > 0 || (org.tickets_registered || 0) > 0);
+      const preferredValue = String((preferred || organizations[0]).organization_id);
+      select.value = organizations.some(org => String(org.organization_id) === previous) ? previous : preferredValue;
+    }
+
+    async function loadOrganizationDetail({ scroll = false } = {}) {
+      const organizationId = document.getElementById('organizationSelect').value;
+      if (!organizationId) return;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+      const clientText = document.getElementById('ticketClientSelect').value;
+      if (clientText) {
+        params.set('client_text', clientText);
+      }
+      const detail = await fetch(`/api/reports/organizations/${organizationId}?${params}`).then(r => r.json());
+      renderOrganizationDetail(detail);
+      if (scroll) {
+        document.getElementById('organizationDetailSection').scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+
+    async function loadClientDetail() {
+      const clientText = document.getElementById('ticketClientSelect').value;
+      const section = document.getElementById('clientDetailSection');
+      if (!clientText) {
+        section.style.display = 'none';
+        renderClientDetail(null);
+        return;
+      }
+
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate, client_text: clientText });
+      const detail = await fetch(`/api/reports/ticket-clients/detail?${params}`).then(r => r.json());
+      renderClientDetail(detail);
+    }
+
+    async function syncSelectedRange() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+      setSyncNotice(`Sincronizando Jira para el rango ${fromDate} al ${toDate}...`);
+      const response = await fetch(`/api/sync?${params}`, { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || 'No fue posible sincronizar Jira.');
+      }
+      setSyncNotice(
+        `Sincronización lista: ${payload.issues_seen || 0} tickets revisados, ${payload.issues_upserted || 0} actualizados y ${payload.worklogs_upserted || 0} worklogs comparados.`
+      );
+      return payload;
+    }
+
+    async function loadData({ sync = false } = {}) {
+      const refreshBtn = document.getElementById('refreshBtn');
+      const previousLabel = refreshBtn ? refreshBtn.textContent : '';
+      if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = sync ? 'Sincronizando...' : 'Actualizando...';
+      }
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      try {
+        if (sync) {
+          await syncSelectedRange();
+        } else {
+          setSyncNotice('');
+        }
+
+        await loadTicketClients();
+        await loadOrganizations();
+        const clientText = document.getElementById('ticketClientSelect').value;
+        const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+        if (clientText) {
+          params.set('client_text', clientText);
+        }
+        const [overview, daily, monthly, weekly, agents] = await Promise.all([
+          fetch(`/api/reports/overview?${params}`).then(r => r.json()),
+          fetch(`/api/reports/daily?${params}`).then(r => r.json()),
+          fetch(`/api/reports/monthly?${params}`).then(r => r.json()),
+          fetch(`/api/reports/weekly?${params}`).then(r => r.json()),
+          fetch(`/api/reports/agents?${params}`).then(r => r.json()),
+        ]);
+
+        document.getElementById('hoursLogged').textContent = fmt(overview.hours_logged);
+        document.getElementById('capacity').textContent = fmt(overview.expected_capacity_hours);
+        document.getElementById('utilization').textContent = `${fmt(overview.utilization_pct)}%`;
+        document.getElementById('incidents').textContent = overview.incidents;
+
+        const tbody = document.getElementById('agentTable');
+        tbody.innerHTML = agents.map(agent => `
+          <tr>
+            <td>${agent.agent_name}</td>
+            <td>${fmt(agent.hours_logged)}</td>
+            <td>${agent.incidents}</td>
+            <td>${agent.clients}</td>
+          </tr>
+        `).join('');
+
+        const dailyCtx = document.getElementById('dailyChart');
+        const monthlyCtx = document.getElementById('monthlyChart');
+        const chartNotice = document.getElementById('chartNotice');
+
+        await loadServiceLevels();
+        renderWeeklyReport(weekly);
+        renderWeeklyChart(weekly);
+        await loadClientDetail();
+        await loadOrganizationDetail();
+
+        if (typeof Chart === 'undefined') {
+          chartNotice.style.display = 'block';
+          chartNotice.textContent = 'Los gráficos no pudieron cargarse, pero los datos del reporte sí están disponibles en la tabla y las métricas.';
+          return;
+        }
+
+        chartNotice.style.display = 'none';
+        if (dailyChart) dailyChart.destroy();
+        if (monthlyChart) monthlyChart.destroy();
+
+        dailyChart = new Chart(dailyCtx, {
+          type: 'line',
+          data: {
+            labels: daily.map(p => p.label),
+            datasets: [{
+              label: 'Horas',
+              data: daily.map(p => p.value),
+              borderColor: '#0ea5e9',
+              backgroundColor: 'rgba(14, 165, 233, 0.15)',
+              borderWidth: 3,
+              pointBackgroundColor: '#0ea5e9',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: '#0ea5e9',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+              y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, border: { display: false } },
+              x: { grid: { display: false }, border: { display: false } }
+            } 
+          }
+        });
+
+        monthlyChart = new Chart(monthlyCtx, {
+          type: 'bar',
+          data: {
+            labels: monthly.map(p => p.label),
+            datasets: [{
+              label: 'Horas',
+              data: monthly.map(p => p.value),
+              backgroundColor: '#8b5cf6',
+              borderRadius: 8,
+              borderSkipped: false
+            }]
+          },
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+              y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, border: { display: false } },
+              x: { grid: { display: false }, border: { display: false } }
+            } 
+          }
+        });
+      } catch (error) {
+        setSyncNotice(error.message || 'No se pudo actualizar el tablero.', 'error');
+      } finally {
+        if (refreshBtn) {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = previousLabel || 'Actualizar';
+        }
+      }
+    }
+
+    function exportToCsv() {
+      if (!currentClientDetail || !currentClientDetail.tickets || !currentClientDetail.tickets.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+      const headers = ["Ticket", "Organización", "Cliente", "Nivel", "Resumen", "Estado", "Asignado", "Horas", "Worklogs", "Creado"];
+      const rows = currentClientDetail.tickets.map(ticket => [
+        ticket.jira_key,
+        (ticket.organizations || []).join(', '),
+        ticket.client_text || '',
+        ticket.service_level || '',
+        ticket.summary || '',
+        ticket.status || '',
+        ticket.assignee_name || '',
+        ticket.hours_logged || 0,
+        ticket.worklog_count || 0,
+        fmtDate(ticket.created_at)
+      ]);
+      
+      const csvContent = "\ufeff" + [headers.join(';')]
+        .concat(rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';')))
+        .join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Reporte_JSM_${currentClientDetail.client_key}_${currentClientDetail.period_from}_a_${currentClientDetail.period_to}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function printExecutiveReport() {
+      if (!currentClientDetail) {
+        alert('Por favor selecciona un cliente para generar el informe.');
+        return;
+      }
+      
+      const detail = currentClientDetail;
+      
+      const slMap = {};
+      (detail.tickets || []).forEach(t => {
+        const lvl = t.service_level || 'Sin nivel';
+        if (!slMap[lvl]) {
+          slMap[lvl] = { hours: 0, tickets: 0, incidents: 0 };
+        }
+        slMap[lvl].hours += t.hours_logged || 0;
+        slMap[lvl].tickets += 1;
+        if (t.incident) {
+          slMap[lvl].incidents += 1;
+        }
+      });
+
+      const toDateObj = new Date(detail.period_to + 'T23:59:59');
+      const isClosed = toDateObj < new Date();
+      const periodStatus = isClosed ? 'Cerrado / Consolidado' : 'En Curso / Abierto';
+      
+      const slRowsHtml = Object.keys(slMap).sort().map(lvl => `
+        <tr>
+          <td><strong>${escapeHtml(lvl)}</strong></td>
+          <td>${fmt(slMap[lvl].hours)} h</td>
+          <td>${slMap[lvl].tickets}</td>
+          <td>${slMap[lvl].incidents}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">Sin datos de nivel de servicio.</td></tr>';
+      
+      const ticketRowsHtml = (detail.tickets || []).map(ticket => `
+        <tr>
+          <td><a href="{{ jira_base_url }}/browse/${ticket.jira_key}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">${ticket.jira_key}</a></td>
+          <td>${escapeHtml((ticket.organizations || []).join(', ') || '-')}</td>
+          <td>${escapeHtml(ticket.service_level || '-')}</td>
+          <td>${escapeHtml(ticket.summary || '')}</td>
+          <td>${escapeHtml(ticket.status || '')}</td>
+          <td>${escapeHtml(ticket.assignee_name || '-')}</td>
+          <td>${fmt(ticket.hours_logged || 0)} h</td>
+          <td>${ticket.worklog_count || 0}</td>
+          <td>${fmtDate(ticket.created_at)}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="9">Sin tickets en este periodo.</td></tr>';
+      
+      const printArea = document.getElementById('printArea');
+      printArea.innerHTML = `
+        <div class="print-header">
+          <div>
+            <div class="print-logo-title">INFORME EJECUTIVO DE SERVICIOS</div>
+            <div class="print-subtitle">Jira Service Management · Reporte Mensual de Capacidad y Actividad</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 10pt; color: #718096;">GENERADO EL</div>
+            <div style="font-weight: bold; font-size: 11pt;">${new Date().toLocaleDateString('es-CL')}</div>
+          </div>
+        </div>
+        
+        <div class="print-meta-grid">
+          <div class="print-meta-item"><strong>Cliente / Organización:</strong> ${escapeHtml(detail.client_text)}</div>
+          <div class="print-meta-item"><strong>Periodo del Reporte:</strong> ${fmtDate(detail.period_from)} al ${fmtDate(detail.period_to)}</div>
+          <div class="print-meta-item"><strong>Tipo de Reporte:</strong> Informe Ejecutivo de Consumo de Horas</div>
+          <div class="print-meta-item"><strong>Estado del Periodo:</strong> ${periodStatus}</div>
+        </div>
+        
+        <div class="print-stats-grid">
+          <div class="print-stat-card">
+            <div class="print-stat-label">Horas Registradas</div>
+            <div class="print-stat-value">${fmt(detail.hours_logged || 0)} h</div>
+          </div>
+          <div class="print-stat-card">
+            <div class="print-stat-label">Tickets Registrados</div>
+            <div class="print-stat-value">${detail.tickets_registered || 0}</div>
+          </div>
+          <div class="print-stat-card">
+            <div class="print-stat-label">Tickets Atendidos</div>
+            <div class="print-stat-value">${detail.tickets_attended || 0}</div>
+          </div>
+          <div class="print-stat-card">
+            <div class="print-stat-label">Incidencias Críticas</div>
+            <div class="print-stat-value">${detail.incident_count || 0}</div>
+          </div>
+        </div>
+        
+        <div class="print-section">
+          <div class="print-section-title">1. Resumen de Niveles de Servicio (SLA)</div>
+          <p style="font-size: 10pt; line-height: 1.5; color: #4a5568; margin-bottom: 15px;">
+            A continuación se presenta el desglose de horas y tickets imputados por cada nivel de servicio acordado (L1, L2, L3) durante el periodo de análisis.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Nivel de Servicio</th>
+                <th>Horas Consumidas</th>
+                <th>Tickets Registrados</th>
+                <th>Incidencias</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${slRowsHtml}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="print-section">
+          <div class="print-section-title">2. Detalle de Actividad y Tickets</div>
+          <p style="font-size: 10pt; line-height: 1.5; color: #4a5568; margin-bottom: 15px;">
+            Listado completo de requerimientos asociados a la cuenta de <strong>${escapeHtml(detail.client_text)}</strong> que registraron actividad o creación en el periodo indicado.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Organización</th>
+                <th>Nivel</th>
+                <th>Resumen</th>
+                <th>Estado</th>
+                <th>Asignado</th>
+                <th>Horas</th>
+                <th>Worklogs</th>
+                <th>Creado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ticketRowsHtml}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="signature-block">
+          <div class="signature-line">
+            <strong>Responsable de Servicios</strong><br>
+            Soporte TI Jira SM<br>
+            Firma y Timbre
+          </div>
+          <div class="signature-line">
+            <strong>Aprobación de Cliente</strong><br>
+            ${escapeHtml(detail.client_text)}<br>
+            Fecha: ____ / ____ / ________
+          </div>
+        </div>
+        
+        <div class="print-footer">
+          <div>Reporte generado automáticamente desde el sistema de analítica de Jira Service Management.</div>
+          <div>Página 1 de 1</div>
+        </div>
+      `;
+      
+      window.print();
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => loadData({ sync: true }));
+    document.getElementById('organizationSelect').addEventListener('change', () => loadOrganizationDetail({ scroll: true }));
+    document.getElementById('ticketClientSelect').addEventListener('change', (e) => {
+      const val = e.target.value;
+      const section = document.getElementById('clientDetailSection');
+      if (val) {
+        section.style.display = 'block';
+        document.getElementById('clientTitle').textContent = val;
+        document.getElementById('clientSubtitle').textContent = `Detalle del periodo seleccionado · ${val}`;
+      } else {
+        section.style.display = 'none';
+      }
+      loadData();
+    });
+    document.getElementById('printReportBtn').addEventListener('click', printExecutiveReport);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportToCsv);
+
+    document.getElementById('clientPrevPageBtn').addEventListener('click', () => {
+      if (clientCurrentPage > 1) {
+        clientCurrentPage--;
+        renderClientTicketPage();
+      }
+    });
+    document.getElementById('clientNextPageBtn').addEventListener('click', () => {
+      if (currentClientDetail && currentClientDetail.tickets) {
+        const totalPages = Math.ceil(currentClientDetail.tickets.length / clientPageSize);
+        if (clientCurrentPage < totalPages) {
+          clientCurrentPage++;
+          renderClientTicketPage();
+        }
+      }
+    });
+
+    (async () => {
+      await loadOrganizations();
+      await loadData();
+    })();
+  </script>
+{% endblock %}

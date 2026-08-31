@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+    .table-container { overflow: auto; padding: 24px; border-radius: 24px; margin-top: 24px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--panel-border); font-size: 0.95rem; }
+    tbody tr.ticket-row { transition: all 0.2s ease; cursor: pointer; }
+    tbody tr.ticket-row:hover { background: rgba(255, 255, 255, 0.03); }
+    th { color: var(--muted); font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.1); }
+    
+    .status-badge, .level-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .status-badge.done { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge.in-progress { background: rgba(14, 165, 233, 0.15); color: var(--accent); border: 1px solid rgba(14, 165, 233, 0.3); }
+    .status-badge.to-do { background: rgba(148, 163, 184, 0.15); color: var(--muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+    
+    .level-badge.l1 { background: rgba(14, 165, 233, 0.15); color: var(--accent); border: 1px solid rgba(14, 165, 233, 0.3); }
+    .level-badge.l2 { background: rgba(251, 191, 36, 0.15); color: var(--warn); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .level-badge.l3 { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .grid-charts {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .chart-card {
+      padding: 24px;
+      border-radius: 24px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--panel-shadow);
+      display: flex;
+      flex-direction: column;
+      height: 380px;
+    }
+    
+    .chart-card h3 {
+      margin: 0 0 16px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .chart-wrapper {
+      position: relative;
+      flex-grow: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .worklogs-expanded-row {
+      background: rgba(15, 23, 42, 0.3);
+    }
+    .worklogs-detail-box {
+      padding: 16px 24px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--panel-border);
+      margin: 8px 12px;
+    }
+    .worklogs-detail-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .worklog-item {
+      display: grid;
+      grid-template-columns: 140px 80px 1fr;
+      gap: 12px;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .worklog-item:last-child {
+      border-bottom: none;
+    }
+    .worklog-date {
+      color: var(--muted);
+    }
+    .worklog-hours {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .worklog-comment {
+      color: #cbd5e1;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar-value {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+      border-radius: 4px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-box-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      width: 300px;
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .grid-charts {
+        grid-template-columns: 1fr;
+      }
+      .chart-card {
+        height: 320px;
+      }
+    }
+{% endblock %}
+
+{% block content %}
+    <section class="hero">
+      <h1>Panel de Agentes</h1>
+      <p>Visualiza y analiza el rendimiento, horas imputadas, KPIs y gráficos detallados de cada agente.</p>
+    </section>
+
+    <div class="panel filters">
+      <div class="field">
+        <label>Desde</label>
+        <input id="fromDate" type="date" value="{{ default_from }}">
+      </div>
+      <div class="field">
+        <label>Hasta</label>
+        <input id="toDate" type="date" value="{{ default_to }}">
+      </div>
+      <div class="field" style="min-width: 250px;">
+        <label>Agente</label>
+        <select id="agentSelect">
+          <option value="">Seleccione un agente...</option>
+        </select>
+      </div>
+      <button id="refreshBtn">Filtrar Agente</button>
+    </div>
+
+    <!-- No Agent Selected Notice -->
+    <div id="noAgentSelectedSection" class="panel" style="padding: 40px; text-align: center;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px;">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <h3 style="margin: 0 0 8px 0; font-weight: 600;">Selecciona un agente</h3>
+      <p>Elige un agente en el menú de filtros superior para cargar sus métricas de rendimiento y registro de horas.</p>
+    </div>
+
+    <!-- Agent Detail Report Section -->
+    <div id="agentDetailSection" style="display: none;">
+      
+      <section class="stats">
+        <div class="panel stat">
+          <div class="label">Horas Registradas</div>
+          <div class="value" id="agentHoursLogged">-</div>
+        </div>
+        <div class="panel stat">
+          <div class="label">Capacidad Esperada</div>
+          <div class="value" id="agentCapacity">-</div>
+        </div>
+        <div class="panel stat">
+          <div class="label">Utilización</div>
+          <div class="value" id="agentUtilization">-</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-value" id="agentUtilizationBar" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="panel stat">
+          <div class="label">Tickets Atendidos</div>
+          <div class="value" id="agentTicketsAttended">-</div>
+        </div>
+        <div class="panel stat">
+          <div class="label">Incidencias</div>
+          <div class="value" id="agentIncidents">-</div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <div class="grid-charts">
+        <div class="chart-card">
+          <h3>Tendencia Diaria de Horas</h3>
+          <div class="chart-wrapper">
+            <canvas id="dailyTrendChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Distribución por Cliente</h3>
+          <div class="chart-wrapper">
+            <canvas id="clientDonutChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tickets Detailed List -->
+      <section class="panel table-container">
+        <div class="search-box-container">
+          <h3 id="tableTitle" style="margin: 0; font-family: var(--font-heading); font-size: 1.25rem;">Tickets Trabajados</h3>
+          <input type="text" id="ticketSearch" class="search-input" placeholder="Buscar por key, cliente o resumen...">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px;">Key</th>
+              <th style="width: 160px;">Cliente</th>
+              <th style="width: 80px;">Nivel</th>
+              <th style="width: 120px;">Estado</th>
+              <th>Resumen</th>
+              <th style="width: 100px; text-align: right;">Horas Agente</th>
+              <th style="width: 100px; text-align: right;">Registros</th>
+              <th style="width: 120px;">Creado</th>
+            </tr>
+          </thead>
+          <tbody id="agentTicketsTable">
+            <tr><td colspan="8">Cargando tickets...</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+          <span id="paginationInfo" style="font-size: 0.9rem; color: var(--muted);"></span>
+          <div style="display: flex; gap: 8px;">
+            <button id="prevPageBtn" style="padding: 8px 16px; border-radius: 10px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.04); color: var(--text); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Anterior</button>
+            <button id="nextPageBtn" style="padding: 8px 16px; border-radius: 10px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.04); color: var(--text); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Siguiente</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  <script>
+    let currentAgentDetail = null;
+    let filteredTickets = [];
+    let currentPage = 1;
+    const pageSize = 10;
+    let dailyChart = null;
+    let donutChart = null;
+
+    function fmt(n) {
+      return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(n);
+    }
+
+    function escapeHtml(value) {
+      if (!value) return '-';
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function fmtDate(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleDateString('es-CL');
+    }
+
+    function getStatusClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('done') || s.includes('cerrado') || s.includes('resuelto')) return 'done';
+      if (s.includes('progress') || s.includes('curso')) return 'in-progress';
+      return 'to-do';
+    }
+
+    function getLevelClass(level) {
+      const s = String(level).toLowerCase();
+      if (s.includes('l1')) return 'l1';
+      if (s.includes('l2')) return 'l2';
+      if (s.includes('l3')) return 'l3';
+      return '';
+    }
+
+    // Load agents to the dropdown selector
+    async function loadAgents() {
+      try {
+        const response = await fetch('/api/agents');
+        if (!response.ok) throw new Error('Error al cargar la lista de agentes');
+        const agents = await response.json();
+        const select = document.getElementById('agentSelect');
+        
+        // Save current selected if any
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">Seleccione un agente...</option>' + 
+          agents.map(a => `<option value="${a.id}" ${currentVal == a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Main fetch function for the agent details
+    async function loadAgentReport() {
+      const agentId = document.getElementById('agentSelect').value;
+      if (!agentId) {
+        document.getElementById('noAgentSelectedSection').style.display = 'block';
+        document.getElementById('agentDetailSection').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('noAgentSelectedSection').style.display = 'none';
+      document.getElementById('agentDetailSection').style.display = 'block';
+
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      
+      const tbody = document.getElementById('agentTicketsTable');
+      tbody.innerHTML = '<tr><td colspan="8">Cargando datos del agente...</td></tr>';
+
+      try {
+        const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+        const response = await fetch(`/api/reports/agents/${agentId}?${params}`);
+        if (!response.ok) throw new Error('Error al consultar el detalle de agente');
+        
+        currentAgentDetail = await response.json();
+        filteredTickets = [...currentAgentDetail.tickets];
+        
+        // Reset filters
+        document.getElementById('ticketSearch').value = '';
+        currentPage = 1;
+        
+        renderAgentKpis();
+        renderAgentTickets();
+        renderAgentCharts(fromDate, toDate);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger)">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    // Render KPI Cards
+    function renderAgentKpis() {
+      if (!currentAgentDetail) return;
+      
+      document.getElementById('agentHoursLogged').textContent = `${fmt(currentAgentDetail.hours_logged)} h`;
+      document.getElementById('agentCapacity').textContent = `${fmt(currentAgentDetail.capacity_hours)} h`;
+      document.getElementById('agentUtilization').textContent = `${fmt(currentAgentDetail.utilization_pct)}%`;
+      document.getElementById('agentTicketsAttended').textContent = currentAgentDetail.tickets_attended;
+      document.getElementById('agentIncidents').textContent = currentAgentDetail.incident_count;
+
+      // Update progress bar
+      const bar = document.getElementById('agentUtilizationBar');
+      bar.style.width = `${Math.min(currentAgentDetail.utilization_pct, 100)}%`;
+      
+      // Color coded bar based on utilization
+      if (currentAgentDetail.utilization_pct > 90) {
+        bar.style.background = 'linear-gradient(90deg, var(--danger) 0%, #f43f5e 100%)';
+      } else if (currentAgentDetail.utilization_pct > 70) {
+        bar.style.background = 'linear-gradient(90deg, var(--warn) 0%, #f59e0b 100%)';
+      } else {
+        bar.style.background = 'linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%)';
+      }
+    }
+
+    // Render Tickets Paginated Table
+    function renderAgentTickets() {
+      const tbody = document.getElementById('agentTicketsTable');
+      if (filteredTickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8">No se encontraron registros en este periodo.</td></tr>';
+        document.getElementById('paginationControls').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('paginationControls').style.display = 'flex';
+      
+      const totalTickets = filteredTickets.length;
+      const totalPages = Math.ceil(totalTickets / pageSize);
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, totalTickets);
+      const pageTickets = filteredTickets.slice(startIdx, endIdx);
+
+      tbody.innerHTML = pageTickets.map(t => {
+        // Find if this row is already expanded
+        const isExpanded = expandedRows.has(t.issue_id);
+        
+        return `
+          <tr class="ticket-row" onclick="toggleRow(${t.issue_id})">
+            <td>
+              <a href="{{ jira_base_url }}/browse/${escapeHtml(t.jira_key)}" target="_blank" onclick="event.stopPropagation();" style="color: var(--accent); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                ${escapeHtml(t.jira_key)}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+            </td>
+            <td>${escapeHtml(t.client_text || (t.organizations && t.organizations.length ? t.organizations.join(', ') : 'Sin cliente'))}</td>
+            <td><span class="level-badge ${getLevelClass(t.service_level)}">${escapeHtml(t.service_level || 'Sin nivel')}</span></td>
+            <td><span class="status-badge ${getStatusClass(t.status)}">${escapeHtml(t.status)}</span></td>
+            <td>
+              <div style="font-weight: 500;">${escapeHtml(t.summary)}</div>
+            </td>
+            <td style="text-align: right; font-weight: 600; color: var(--accent);">${fmt(t.hours_logged || 0)} h</td>
+            <td style="text-align: right; color: var(--muted);">${t.worklog_count || 0}</td>
+            <td>${fmtDate(t.created_at)}</td>
+          </tr>
+          ${isExpanded ? `
+            <tr class="worklogs-expanded-row">
+              <td colspan="8">
+                <div class="worklogs-detail-box">
+                  <div class="worklogs-detail-title">Imputaciones Detalladas del Agente</div>
+                  ${t.worklogs && t.worklogs.length ? t.worklogs.map(w => `
+                    <div class="worklog-item">
+                      <div class="worklog-date">${fmtDate(w.started_at)} ${w.started_at ? new Date(w.started_at).toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'}) : ''}</div>
+                      <div class="worklog-hours">${fmt(w.hours)} h</div>
+                      <div class="worklog-comment">${escapeHtml(w.comment || '(Sin comentario)')}</div>
+                    </div>
+                  `).join('') : '<div style="font-size:0.85rem; color: var(--muted)">Sin comentarios o imputaciones directas en este ticket (acumulado de subtareas).</div>'}
+                </div>
+              </td>
+            </tr>
+          ` : ''}
+        `;
+      }).join('');
+
+      document.getElementById('paginationInfo').textContent = `Mostrando ${startIdx + 1}-${endIdx} de ${totalTickets} tickets`;
+      
+      const prevBtn = document.getElementById('prevPageBtn');
+      const nextBtn = document.getElementById('nextPageBtn');
+      
+      prevBtn.disabled = (currentPage === 1);
+      nextBtn.disabled = (currentPage === totalPages);
+      
+      prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1';
+      prevBtn.style.cursor = prevBtn.disabled ? 'not-allowed' : 'pointer';
+      nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1';
+      nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : 'pointer';
+    }
+
+    // Keep track of expanded ticket worklogs
+    const expandedRows = new Set();
+
+    function toggleRow(issueId) {
+      if (expandedRows.has(issueId)) {
+        expandedRows.delete(issueId);
+      } else {
+        expandedRows.add(issueId);
+      }
+      renderAgentTickets();
+    }
+
+    // Client-side quick filter / search
+    document.getElementById('ticketSearch').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!currentAgentDetail) return;
+      
+      if (!q) {
+        filteredTickets = [...currentAgentDetail.tickets];
+      } else {
+        filteredTickets = currentAgentDetail.tickets.filter(t => 
+          t.jira_key.toLowerCase().includes(q) ||
+          (t.client_text && t.client_text.toLowerCase().includes(q)) ||
+          t.summary.toLowerCase().includes(q)
+        );
+      }
+      
+      currentPage = 1;
+      renderAgentTickets();
+    });
+
+    // Pagination events
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderAgentTickets();
+      }
+    });
+
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredTickets.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderAgentTickets();
+      }
+    });
+
+    // Render Performance Charts
+    function renderAgentCharts(fromDate, toDate) {
+      if (!currentAgentDetail) return;
+
+      // --- Line Chart: Daily Hours Trend ---
+      const datesMap = {};
+      
+      // Initialize dates map with 0 hours for all business days in range
+      let current = new Date(fromDate);
+      const end = new Date(toDate);
+      while (current <= end) {
+        // Skip weekends
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) {
+          const iso = current.toISOString().split('T')[0];
+          datesMap[iso] = 0;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+
+      // Populate hours from worklogs
+      currentAgentDetail.tickets.forEach(ticket => {
+        (ticket.worklogs || []).forEach(w => {
+          if (w.started_at) {
+            const iso = w.started_at.split('T')[0];
+            if (datesMap[iso] !== undefined) {
+              datesMap[iso] = (datesMap[iso] || 0) + (w.hours || 0);
+            }
+          }
+        });
+      });
+
+      const lineLabels = Object.keys(datesMap).sort();
+      const lineData = lineLabels.map(label => datesMap[label]);
+
+      if (dailyChart) dailyChart.destroy();
+      const ctxLine = document.getElementById('dailyTrendChart').getContext('2d');
+      dailyChart = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: lineLabels.map(label => {
+            const p = label.split('-');
+            return `${p[2]}/${p[1]}`;
+          }),
+          datasets: [{
+            label: 'Horas Imputadas',
+            data: lineData,
+            borderColor: '#0ea5e9',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#8b5cf6',
+            pointHoverRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8', font: { family: 'Inter' } },
+              min: 0,
+            }
+          }
+        }
+      });
+
+      // --- Donut Chart: Client Hours Distribution ---
+      const clientMap = {};
+      currentAgentDetail.tickets.forEach(ticket => {
+        const client = ticket.client_text || (ticket.organizations && ticket.organizations.length ? ticket.organizations.join(', ') : 'Sin cliente');
+        clientMap[client] = (clientMap[client] || 0) + (ticket.hours_logged || 0);
+      });
+
+      // Filter clients with 0 hours logged by agent
+      const sortedClients = Object.entries(clientMap)
+        .filter(([_, hrs]) => hrs > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      const donutLabels = sortedClients.map(c => c[0]);
+      const donutData = sortedClients.map(c => c[1]);
+
+      if (donutChart) donutChart.destroy();
+      const ctxDonut = document.getElementById('clientDonutChart').getContext('2d');
+      
+      if (donutData.length === 0) {
+        // Draw empty state
+        donutChart = new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: ['Sin datos'],
+            datasets: [{
+              data: [1],
+              backgroundColor: ['rgba(255,255,255,0.05)'],
+              borderWidth: 0,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      } else {
+        donutChart = new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: donutLabels,
+            datasets: [{
+              data: donutData,
+              backgroundColor: [
+                '#0ea5e9', '#8b5cf6', '#10b981', '#fbbf24', '#f43f5e', 
+                '#3b82f6', '#ec4899', '#14b8a6', '#f97316', '#64748b'
+              ],
+              borderWidth: 1,
+              borderColor: 'rgba(15, 23, 42, 0.8)',
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: '#f8fafc',
+                  font: { family: 'Inter', size: 11 },
+                  boxWidth: 12,
+                  padding: 8,
+                }
+              }
+            },
+            cutout: '65%',
+          }
+        });
+      }
+    }
+
+    // Refresh and dynamic update hooks
+    document.getElementById('refreshBtn').addEventListener('click', loadAgentReport);
+    document.getElementById('agentSelect').addEventListener('change', () => {
+      expandedRows.clear();
+      loadAgentReport();
+    });
+    
+    // Changing date inputs triggers filters
+    document.getElementById('fromDate').addEventListener('change', () => {
+      expandedRows.clear();
+      loadAgentReport();
+    });
+    document.getElementById('toDate').addEventListener('change', () => {
+      expandedRows.clear();
+      loadAgentReport();
+    });
+
+    // Initialize Page
+    loadAgents().then(() => {
+      // Auto select agent from query params or selection if requested
+      loadAgentReport();
+    });
+  </script>
+{% endblock %}

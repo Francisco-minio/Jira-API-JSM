@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: jira_report
+      POSTGRES_USER: jira
+      POSTGRES_PASSWORD: jira
+    ports:
+      - "5433:5432"
+    volumes:
+      - jira_report_pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://jira:jira@db:5432/jira_report
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+
+volumes:
+  jira_report_pgdata:
