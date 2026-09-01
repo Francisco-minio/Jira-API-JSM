@@ -26,7 +26,7 @@ services:
       DATABASE_URL: postgresql+psycopg://jira:${POSTGRES_PASSWORD:-jira_prod_password_change_me}@db:5432/jira_report
     expose:
       - "8000"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips='*'
 
   caddy:
     image: caddy:2-alpine
