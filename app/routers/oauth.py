@@ -71,6 +71,23 @@ def oauth_metadata(request: Request):
     }
 
 
+@router.get("/.well-known/oauth-protected-resource")
+def oauth_protected_resource(request: Request):
+    """
+    RFC 9728 OAuth 2.0 Protected Resource Metadata (MCP standard).
+    """
+    host = request.headers.get("host") or request.url.hostname or "jira.bcode.cl"
+    base_url = f"https://{host}"
+
+    return {
+        "resource": f"{base_url}/mcp/sse",
+        "authorization_servers": [base_url],
+        "scopes_supported": ["mcp", "read", "write"],
+        "bearer_methods_supported": ["header"],
+        "resource_documentation": f"{base_url}/",
+    }
+
+
 @router.post("/oauth/register")
 def register_client(payload: DynamicClientRegistrationRequest, request: Request):
     """
