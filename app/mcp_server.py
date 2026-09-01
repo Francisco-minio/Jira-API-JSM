@@ -8,6 +8,7 @@ from datetime import date, datetime
 from typing import Optional
 from sqlalchemy import select
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from app.db import SessionLocal
 from app.models import Agent, Client, JiraIssue
@@ -19,8 +20,11 @@ from app.services.reports import (
 )
 from app.services.sync import sync_from_jira
 
-# Initialize FastMCP Server
-mcp = FastMCP("Jira Reports Service")
+# Initialize FastMCP Server with transport security disabled for reverse proxy compatibility
+mcp = FastMCP(
+    "Jira Reports Service",
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 @mcp.tool()
