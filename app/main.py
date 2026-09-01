@@ -40,11 +40,15 @@ app.include_router(oauth_router)
 app.include_router(web_router)
 app.include_router(api_router)
 
-# Montar el servidor MCP vía SSE
-# Permite conectar clientes MCP vía https://dominio/mcp/sse o https://dominio/sse
-mcp_app = mcp.sse_app()
-app.mount("/mcp", mcp_app)
-app.mount("/sse", mcp_app)
+# Montar el servidor MCP con soporte dual:
+# 1. Streamable HTTP (Estándar moderno requerido por Google Gemini / Cloud): /mcp
+# 2. SSE tradicional (Estándar para clientes desktop como Cursor/Claude): /mcp/sse y /sse
+mcp_sse = mcp.sse_app()
+mcp_stream = mcp.streamable_http_app()
+
+app.mount("/mcp/sse", mcp_sse)
+app.mount("/sse", mcp_sse)
+app.mount("/mcp", mcp_stream)
 
 
 @app.on_event("startup")

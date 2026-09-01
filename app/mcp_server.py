@@ -24,6 +24,7 @@ from app.services.sync import sync_from_jira
 mcp = FastMCP(
     "Jira Reports Service",
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+    stateless_http=True,
 )
 
 
