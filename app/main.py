@@ -29,9 +29,10 @@ app.include_router(web_router)
 app.include_router(api_router)
 
 # Montar el servidor MCP vía SSE
-# Permite conectar clientes MCP vía https://dominio/mcp/sse (o https://dominio/sse)
+# Permite conectar clientes MCP vía https://dominio/mcp/sse o https://dominio/sse
 mcp_app = mcp.sse_app()
 app.mount("/mcp", mcp_app)
+app.mount("/sse", mcp_app)
 
 
 @app.on_event("startup")

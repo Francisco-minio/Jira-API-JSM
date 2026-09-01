@@ -55,10 +55,8 @@ def oauth_metadata(request: Request):
     RFC 8414 OAuth 2.0 Authorization Server Metadata.
     Permite el descubrimiento automático por parte de Google Gemini Spark.
     """
-    base_url = str(request.base_url).rstrip("/")
-    # Si viene detrás de un reverse proxy con https
-    if request.headers.get("x-forwarded-proto") == "https":
-        base_url = base_url.replace("http://", "https://")
+    host = request.headers.get("host") or request.url.hostname or "jira.bcode.cl"
+    base_url = f"https://{host}"
 
     return {
         "issuer": base_url,
