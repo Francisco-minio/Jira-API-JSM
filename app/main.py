@@ -16,10 +16,22 @@ from app.routers.oauth import router as oauth_router
 from app.routers.web import router as web_router
 from app.mcp_server import mcp
 
+from fastapi.middleware.cors import CORSMiddleware
+
 settings = get_settings()
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title=settings.app_name)
+
+# Habilitar CORS para permitir peticiones desde clientes web como Gemini Spark
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Incluir routers

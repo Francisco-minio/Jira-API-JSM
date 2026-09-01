@@ -72,6 +72,9 @@ def oauth_metadata(request: Request):
 
 
 @router.get("/.well-known/oauth-protected-resource")
+@router.get("/.well-known/oauth-protected-resource/mcp")
+@router.get("/.well-known/oauth-protected-resource/mcp/sse")
+@router.get("/mcp/.well-known/oauth-protected-resource")
 def oauth_protected_resource(request: Request):
     """
     RFC 9728 OAuth 2.0 Protected Resource Metadata (MCP standard).
