@@ -104,6 +104,7 @@ def _upsert_person(session: Session, model, jira_user):
     if obj is None:
         obj = model(jira_account_id=account_id, name=jira_user.display_name, email=jira_user.email)
         session.add(obj)
+        session.flush()
     else:
         obj.jira_account_id = account_id or obj.jira_account_id
         obj.name = jira_user.display_name
