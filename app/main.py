@@ -12,6 +12,7 @@ from app.core.security import init_admin_user
 from app.db import Base, SessionLocal, engine
 from app.routers.api import router as api_router
 from app.routers.auth import router as auth_router
+from app.routers.oauth import router as oauth_router
 from app.routers.web import router as web_router
 from app.mcp_server import mcp
 
@@ -23,6 +24,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Incluir routers
 app.include_router(auth_router)
+app.include_router(oauth_router)
 app.include_router(web_router)
 app.include_router(api_router)
 

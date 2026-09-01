@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autorizar Integración - {{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --panel: rgba(18, 26, 43, 0.85);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #0ea5e9;
+      --accent-hover: #38bdf8;
+      --accent-glow: rgba(14, 165, 233, 0.35);
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.5) 0px, transparent 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .icon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(99, 102, 241, 0.2));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+
+    .icon-badge svg {
+      width: 32px;
+      height: 32px;
+      color: var(--accent);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .app-badge {
+      display: inline-block;
+      background: rgba(14, 165, 233, 0.15);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .permissions-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+
+    .permissions-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .permission-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .permission-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .permission-item svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+    }
+
+    .user-info span {
+      color: var(--muted);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-approve {
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .btn-approve:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(14, 165, 233, 0.5);
+    }
+
+    .btn-deny {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+    }
+
+    .btn-deny:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="icon-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+        <h1>Autorizar Conexión</h1>
+        <p class="subtitle">
+          <span class="app-badge">{{ client_name }}</span> solicita acceso a las herramientas y reportes de <strong>{{ app_name }}</strong>.
+        </p>
+      </div>
+
+      <div class="permissions-box">
+        <div class="permissions-title">Permisos solicitados:</div>
+        <div class="permission-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Consultar consumo de horas por cliente y técnico
+        </div>
+        <div class="permission-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Consultar reporte de visitas programadas y en terreno
+        </div>
+        <div class="permission-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Disparar sincronización de tickets con Jira Cloud
+        </div>
+      </div>
+
+      <form method="POST" action="/oauth/authorize">
+        <input type="hidden" name="client_id" value="{{ client_id }}">
+        <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+        <input type="hidden" name="state" value="{{ state }}">
+        <input type="hidden" name="code_challenge" value="{{ code_challenge }}">
+        <input type="hidden" name="code_challenge_method" value="{{ code_challenge_method }}">
+
+        {% if current_user %}
+          <div class="user-info">
+            <span>Conectado como:</span>
+            <strong>{{ current_user.full_name }} ({{ current_user.username }})</strong>
+          </div>
+        {% else %}
+          <div class="form-group">
+            <label for="username">Usuario Administrador</label>
+            <input type="text" id="username" name="username" class="form-input" placeholder="admin" required autofocus>
+          </div>
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required>
+          </div>
+        {% endif %}
+
+        <div class="btn-group">
+          <button type="submit" name="action" value="deny" class="btn btn-deny">Cancelar</button>
+          <button type="submit" name="action" value="approve" class="btn btn-approve">Permitir Acceso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
