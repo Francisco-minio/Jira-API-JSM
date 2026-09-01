@@ -158,4 +158,8 @@ def trigger_jira_sync(force_all: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    import sys
+    if "--sse" in sys.argv or "-s" in sys.argv:
+        mcp.run(transport="sse")
+    else:
+        mcp.run()

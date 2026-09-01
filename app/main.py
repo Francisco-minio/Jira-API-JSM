@@ -13,6 +13,7 @@ from app.db import Base, SessionLocal, engine
 from app.routers.api import router as api_router
 from app.routers.auth import router as auth_router
 from app.routers.web import router as web_router
+from app.mcp_server import mcp
 
 settings = get_settings()
 logger = logging.getLogger("uvicorn.error")
@@ -24,6 +25,11 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(auth_router)
 app.include_router(web_router)
 app.include_router(api_router)
+
+# Montar el servidor MCP vía SSE
+# Permite conectar clientes MCP vía https://dominio/mcp/sse (o https://dominio/sse)
+mcp_app = mcp.sse_app()
+app.mount("/mcp", mcp_app)
 
 
 @app.on_event("startup")
