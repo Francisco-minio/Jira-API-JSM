@@ -28,7 +28,11 @@ OAUTH_CLIENTS: dict[str, dict] = {
         "client_id": "gemini-spark-client",
         "client_secret": "gemini-spark-secret",
         "client_name": "Google Gemini Spark",
-        "redirect_uris": ["https://gemini.google.com", "https://spark.google.com"],
+        "redirect_uris": [
+            "https://gemini.google.com",
+            "https://spark.google.com",
+            "https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-112969830549182723321-jira_bcode_cl",
+        ],
         "grant_types": ["authorization_code", "refresh_token"],
         "response_types": ["code"],
         "token_endpoint_auth_method": "client_secret_post",
