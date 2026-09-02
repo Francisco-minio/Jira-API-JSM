@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
@@ -31,6 +31,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def disable_buffering_for_mcp(request: Request, call_next):
+    """
+    Indica a Cloudflare Tunnel y Nginx/Caddy que desactiven el buffering
+    para que los eventos SSE de MCP se transmitan en tiempo real sin delay.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith(("/mcp", "/sse", "/.well-known")):
+        response.headers["X-Accel-Buffering"] = "no"
+        response.headers["Cache-Control"] = "no-cache, no-transform"
+    return response
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
