@@ -200,21 +200,31 @@ def process_authorization(
             detail="Debe iniciar sesión para autorizar la integración.",
         )
 
-    # Generar código de autorización
-    auth_code = f"authcode_{secrets.token_urlsafe(32)}"
-    AUTH_CODES[auth_code] = {
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "user_id": user.id,
-        "code_challenge": code_challenge,
-        "code_challenge_method": code_challenge_method,
-        "expires_at": time.time() + 600,  # 10 minutos
-    }
+    # Verificar qué response_type pidió Google (code o token)
+    response_type = request.query_params.get("response_type") or "code"
 
-    # Redireccionar de vuelta a Gemini
-    callback_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}code={auth_code}"
-    if state:
-        callback_url += f"&state={state}"
+    if "token" in response_type:
+        # Flujo implícito (Google handleImplicitFlow)
+        access_token = create_access_token(user.id, user.username, expires_in_seconds=2592000)
+        fragment = f"access_token={access_token}&token_type=Bearer&expires_in=2592000"
+        if state:
+            fragment += f"&state={state}"
+        callback_url = f"{redirect_uri}#{fragment}"
+    else:
+        # Flujo estándar authorization_code
+        auth_code = f"authcode_{secrets.token_urlsafe(32)}"
+        AUTH_CODES[auth_code] = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "user_id": user.id,
+            "code_challenge": code_challenge,
+            "code_challenge_method": code_challenge_method,
+            "expires_at": time.time() + 600,  # 10 minutos
+        }
+        delimiter = "&" if "?" in redirect_uri else "?"
+        callback_url = f"{redirect_uri}{delimiter}code={auth_code}"
+        if state:
+            callback_url += f"&state={state}"
 
     return RedirectResponse(url=callback_url, status_code=status.HTTP_303_SEE_OTHER)
 
