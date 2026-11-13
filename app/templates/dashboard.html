@@ -1053,6 +1053,10 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
       5. Visitas en Terreno & Capacidad Semanal
     </button>
+    <button type="button" class="bi-tab-btn" data-tab="tabSampling">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      6. Muestreo de Auditoría (QA)
+    </button>
   </nav>
 
   <!-- ==================== TAB 1: VISIÓN 360° & OPERACIÓN ==================== -->
@@ -1503,6 +1507,211 @@
     </section>
   </div>
 
+  <!-- ==================== TAB 6: MUESTREO DE AUDITORÍA & CONTROL DE CALIDAD (QA SAMPLING) ==================== -->
+  <div id="tabSampling" class="bi-tab-pane">
+    <section class="panel bi-card" style="margin-bottom: 20px;">
+      <div class="bi-card-head">
+        <div>
+          <h3>Estudio y Generador de Muestras de Auditoría & Control de Calidad (QA)</h3>
+          <div class="bi-card-sub">Define los criterios del universo, el método de selección (Aleatorio Simple o Estratificado) y el tamaño deseado antes de extraer una muestra imparcial de tickets para auditoría operacional.</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; padding: 16px; background: rgba(15, 23, 42, 0.4); border-radius: 14px; border: 1px solid var(--panel-border);">
+        <div class="slicer-item">
+          <label for="sampleScopeMode">Universo Base</label>
+          <select id="sampleScopeMode">
+            <option value="filtered" selected>Filtros actuales del tablero</option>
+            <option value="all">Todo el periodo seleccionado (Sin filtros)</option>
+          </select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleFindingType">Foco de Hallazgo / Auditoría</label>
+          <select id="sampleFindingType">
+            <option value="all" selected>Cualquier ticket (Muestreo General)</option>
+            <option value="with_findings">🚨 Solo con Hallazgos Potenciales</option>
+            <option value="orphan_0h">❌ Solo Resueltos sin Horas (0h)</option>
+            <option value="zombies">🧟 Solo Tickets Zombies (Inactivos ≥ 7d)</option>
+            <option value="lag_over_24">⏱️ Solo Desfase de Imputación > 24h</option>
+            <option value="handoffs">🤝 Solo Multi-Agente / Handoffs</option>
+            <option value="overdue">⚠️ Solo Vencidos / Fuera de Plazo</option>
+            <option value="incidents">🔥 Solo Incidencias Críticas</option>
+            <option value="visits">📍 Solo Visitas en Terreno</option>
+          </select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleClient">Cliente Específico</label>
+          <select id="sampleClient"><option value="">Todos los clientes</option></select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleAgent">Agente Específico</label>
+          <select id="sampleAgent"><option value="">Todos los agentes</option></select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleLevel">Nivel de Servicio (SLA)</label>
+          <select id="sampleLevel"><option value="">Todos los niveles</option></select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleTopic">Temática / Causa Raíz</label>
+          <select id="sampleTopic"><option value="">Todas las temáticas</option></select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleStatus">Estado de Resolución</label>
+          <select id="sampleStatus">
+            <option value="" selected>Todos los estados</option>
+            <option value="resolved">Solo Tickets Resueltos / Cerrados</option>
+            <option value="open">Solo Tickets Abiertos / En Curso</option>
+          </select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleMethod">Método de Muestreo</label>
+          <select id="sampleMethod">
+            <option value="simple" selected>Aleatorio Simple (Muestra uniforme)</option>
+            <option value="stratified_agent">Estratificado por Agente (Equitativo por técnico)</option>
+            <option value="stratified_client">Estratificado por Cliente (Equitativo por cliente)</option>
+            <option value="stratified_topic">Estratificado por Temática (Balance técnico)</option>
+          </select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleSizeMode">Tipo de Medida</label>
+          <select id="sampleSizeMode">
+            <option value="count" selected>Cantidad Fija de Tickets</option>
+            <option value="pct">Porcentaje del Universo (%)</option>
+          </select>
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleSizeValue">Tamaño de Muestra</label>
+          <input type="number" id="sampleSizeValue" value="20" min="1" max="1000" style="padding: 9px 12px; border-radius: 10px;">
+        </div>
+
+        <div class="slicer-item">
+          <label for="sampleSeed" title="Opcional. Introduce un número o código para reproducir exactamente la misma muestra en auditorías oficiales">Semilla de Reproducibilidad (Opcional)</label>
+          <input type="text" id="sampleSeed" placeholder="Ej: 202611 (vacío = 100% azar)" style="padding: 9px 12px; border-radius: 10px;">
+        </div>
+
+        <div style="display: flex; align-items: flex-end;">
+          <button type="button" id="executeSamplingBtn" class="btn-bi" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; font-weight: 700; padding: 11px 22px; width: 100%; justify-content: center; border-radius: 12px; font-size: 0.92rem; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);">
+            🎲 Generar Muestra Aleatoria
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTADOS Y HALLAZGOS DE LA MUESTRA -->
+    <div id="sampleResultsContainer" style="display: none;">
+      <!-- TARJETAS DE HALLAZGOS DE LA MUESTRA -->
+      <section class="bi-kpi-grid" aria-label="Indicadores de Hallazgos en la Muestra" style="margin-bottom: 20px;">
+        <div class="bi-kpi-card" style="--kpi-color: #38bdf8;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Muestra Extraída</span>
+            <span id="sampleCoverageBadge" class="bi-kpi-delta neutral">0%</span>
+          </div>
+          <div class="bi-kpi-value" id="sampleTotalVal">0</div>
+          <div class="bi-kpi-sub">
+            <span id="sampleUniverseSub">De un universo de 0 tkts</span>
+            <span id="sampleMethodSub">Método: Aleatorio Simple</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #ef4444;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Tickets con Hallazgos / Alertas</span>
+            <span id="sampleFindingsBadge" class="bi-kpi-delta neutral">0%</span>
+          </div>
+          <div class="bi-kpi-value" id="sampleFindingsVal">0</div>
+          <div class="bi-kpi-sub">
+            <span id="sampleOrphansSub">0h: 0</span>
+            <span id="sampleZombiesSub">Zombies: 0</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #f59e0b;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Desfase Promedio Carga (Lag)</span>
+            <span id="sampleLagBadge" class="bi-kpi-delta neutral">-</span>
+          </div>
+          <div class="bi-kpi-value" id="sampleLagVal">0 h</div>
+          <div class="bi-kpi-sub">
+            <span id="sampleLagCriticalSub">>24h desfase: 0</span>
+            <span id="sampleHandoffsSub">Handoffs: 0</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #10b981;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Cumplimiento de Plazo (On-Time)</span>
+            <span id="sampleOnTimeBadge" class="bi-kpi-delta neutral">-</span>
+          </div>
+          <div class="bi-kpi-value" id="sampleOnTimeVal">0%</div>
+          <div class="bi-kpi-sub">
+            <span id="sampleOverdueSub">Vencidos: 0</span>
+            <span id="sampleFcrSub">FCR: 0%</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #a855f7;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">1ª Atención (TTFA) / MTTR</span>
+            <span class="bi-kpi-delta neutral">Muestra</span>
+          </div>
+          <div class="bi-kpi-value" id="sampleTtfaVal">0 h</div>
+          <div class="bi-kpi-sub">
+            <span id="sampleMttrSub">MTTR Prom: 0 h</span>
+            <span id="sampleHoursTotalSub">Horas Muestra: 0 h</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA DE DETALLE DE TICKETS MUESTREADOS Y SUS HALLAZGOS -->
+      <section class="panel bi-card">
+        <div class="bi-card-head">
+          <div>
+            <h3>Tickets Seleccionados en la Muestra y Hallazgos Específicos</h3>
+            <div class="bi-card-sub" id="sampleMetaSummaryText">Muestra aleatoria generada. Revisa los hallazgos en cada ticket o inspecciona sus worklogs para auditoría.</div>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" id="reSampleBtn" class="btn-bi">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+              Regenerar Muestra
+            </button>
+            <button type="button" id="exportSampleCsvBtn" class="btn-bi" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Exportar Muestra QA (CSV)
+            </button>
+          </div>
+        </div>
+
+        <div tabindex="0" role="region" aria-label="Tabla de muestra de auditoría" class="table-wrapper">
+          <table class="responsive-stack" style="--label-2: 'Cliente'; --label-3: 'Agente'; --label-4: 'Temática'; --label-5: 'Hallazgos / Alertas'; --label-6: 'Horas'; --label-7: 'Lag'; --label-8: 'TTFA / MTTR'; --label-9: 'Acción';">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Cliente</th>
+                <th>Agente</th>
+                <th>Temática</th>
+                <th>Hallazgos / Alertas de Auditoría</th>
+                <th>Horas</th>
+                <th>Desfase Lag</th>
+                <th>TTFA / MTTR</th>
+                <th>Auditar</th>
+              </tr>
+            </thead>
+            <tbody id="sampleTableTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <!-- ==================== EXPLORADOR DRILL-DOWN DE TICKETS Y WORKLOGS ==================== -->
   <section class="panel bi-card" style="margin-top: 22px;">
     <div class="bi-card-head">
@@ -1781,6 +1990,13 @@
       fillSelect('slicerVisit', collectUnique(t => t.visit_type), 'Todas');
       fillSelect('slicerTopic', collectUnique(t => t.topic), 'Todas');
       fillSelect('slicerAudit', collectUnique(t => t.audit_category), 'Todos');
+
+      // Opciones para el Muestreador de Auditoría (QA)
+      fillSelect('sampleClient', collectUnique(t => t.client), 'Todos los clientes');
+      fillSelect('sampleAgent', collectUnique(t => t.agent), 'Todos los agentes');
+      fillSelect('sampleLevel', collectUnique(t => t.service_level), 'Todos los niveles');
+      fillSelect('sampleTopic', collectUnique(t => t.topic), 'Todas las temáticas');
+
       syncSlicersFromState();
     }
 
@@ -4015,6 +4231,373 @@
     document.getElementById('nextPageBtn').addEventListener('click', () => {
       currentPage++;
       renderDrilldownTable();
+    });
+
+    // ==================== TAB 6: MUESTREO DE AUDITORÍA (QA SAMPLING) ====================
+    let currentSample = [];
+
+    // PRNG Mulberry32 determinista para reproducibilidad de auditorías formales
+    function getRng(seedStr) {
+      if (!seedStr) return Math.random;
+      let h = 0;
+      for (let i = 0; i < seedStr.length; i++) {
+        h = Math.imul(31, h) + seedStr.charCodeAt(i) | 0;
+      }
+      let a = (h >>> 0);
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffleArray(arr, rng) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function getTicketFindingAlerts(t) {
+      const alerts = [];
+      if (t.is_orphan_resolved) {
+        alerts.push({ type: 'orphan', label: 'Resuelto 0h', color: '#ef4444', desc: 'Ticket cerrado sin ninguna hora imputada' });
+      }
+      if (Number(t.avg_worklog_lag_hours || 0) > 24) {
+        alerts.push({ type: 'lag', label: `Lag ${fmt(t.avg_worklog_lag_hours, 1)}h`, color: '#f97316', desc: 'Desfase de registro superior a 24 horas' });
+      }
+      if (t.is_zombie) {
+        alerts.push({ type: 'zombie', label: `Zombie (${t.inactivity_days}d)`, color: '#f59e0b', desc: 'Abierto sin actividad durante 7 o más días' });
+      }
+      if (t.is_handoff) {
+        alerts.push({ type: 'handoff', label: 'Handoff / Multi', color: '#0284c7', desc: 'Participación multi-agente o autor distinto del asignado' });
+      }
+      if (t.is_overdue) {
+        alerts.push({ type: 'overdue', label: 'Vencido', color: '#dc2626', desc: 'Excedió fecha límite o target de SLA' });
+      }
+      return alerts;
+    }
+
+    function executeSampling() {
+      if (!rawBiData) return;
+
+      const scopeMode = document.getElementById('sampleScopeMode').value;
+      const findingType = document.getElementById('sampleFindingType').value;
+      const client = document.getElementById('sampleClient').value;
+      const agent = document.getElementById('sampleAgent').value;
+      const level = document.getElementById('sampleLevel').value;
+      const topic = document.getElementById('sampleTopic').value;
+      const status = document.getElementById('sampleStatus').value;
+      const method = document.getElementById('sampleMethod').value;
+      const sizeMode = document.getElementById('sampleSizeMode').value;
+      const sizeVal = Math.max(parseInt(document.getElementById('sampleSizeValue').value, 10) || 1, 1);
+      const seed = document.getElementById('sampleSeed').value.trim();
+
+      // 1. Filtrar Universo Base
+      let universe = scopeMode === 'all' ? [...(rawBiData.tickets || [])] : [...filteredTickets];
+
+      universe = universe.filter(t => {
+        // Criterio de Foco de Hallazgos
+        if (findingType === 'with_findings') {
+          const alerts = getTicketFindingAlerts(t);
+          if (alerts.length === 0) return false;
+        } else if (findingType === 'orphan_0h') {
+          if (!t.is_orphan_resolved) return false;
+        } else if (findingType === 'zombies') {
+          if (!t.is_zombie) return false;
+        } else if (findingType === 'lag_over_24') {
+          if (Number(t.avg_worklog_lag_hours || 0) <= 24) return false;
+        } else if (findingType === 'handoffs') {
+          if (!t.is_handoff) return false;
+        } else if (findingType === 'overdue') {
+          if (!t.is_overdue) return false;
+        } else if (findingType === 'incidents') {
+          if (!t.is_incident) return false;
+        } else if (findingType === 'visits') {
+          if (!t.is_visit) return false;
+        }
+
+        // Filtros específicos adicionales
+        if (client && t.client !== client) return false;
+        if (agent && t.agent !== agent) return false;
+        if (level && t.service_level !== level) return false;
+        if (topic && t.topic !== topic) return false;
+        if (status === 'resolved' && !t.is_resolved) return false;
+        if (status === 'open' && t.is_resolved) return false;
+
+        return true;
+      });
+
+      const totalUniverse = universe.length;
+      if (totalUniverse === 0) {
+        alert('No se encontraron tickets en el universo que cumplan con los filtros y criterios de hallazgo definidos para el muestreo.');
+        return;
+      }
+
+      const rng = getRng(seed);
+
+      // 2. Aplicar Muestreo (Simple o Estratificado)
+      let sample = [];
+      if (method === 'simple') {
+        const targetCount = sizeMode === 'pct'
+          ? Math.max(1, Math.round((totalUniverse * sizeVal) / 100))
+          : Math.min(sizeVal, totalUniverse);
+        sample = shuffleArray(universe, rng).slice(0, targetCount);
+      } else {
+        // Estratificado
+        let stratumKey = 'agent';
+        if (method === 'stratified_client') stratumKey = 'client';
+        else if (method === 'stratified_topic') stratumKey = 'topic';
+
+        const strata = {};
+        universe.forEach(t => {
+          const k = t[stratumKey] || 'Sin clasificar';
+          if (!strata[k]) strata[k] = [];
+          strata[k].push(t);
+        });
+
+        const stratumNames = Object.keys(strata);
+        const perStratum = sizeMode === 'pct'
+          ? Math.max(1, Math.round((totalUniverse * (sizeVal / 100)) / stratumNames.length))
+          : Math.max(1, Math.round(sizeVal / stratumNames.length));
+
+        stratumNames.forEach(name => {
+          const stratumList = strata[name];
+          const k = Math.min(perStratum, stratumList.length);
+          const picked = shuffleArray(stratumList, rng).slice(0, k);
+          sample.push(...picked);
+        });
+
+        sample = shuffleArray(sample, rng);
+      }
+
+      currentSample = sample;
+      renderSampleResults(sample, totalUniverse, method, seed);
+    }
+
+    function renderSampleResults(sample, totalUniverse, method, seed) {
+      const container = document.getElementById('sampleResultsContainer');
+      container.style.display = 'block';
+
+      const n = sample.length;
+      const coveragePct = totalUniverse > 0 ? (n / totalUniverse) * 100 : 0;
+
+      let findingsTicketsCount = 0;
+      let orphanCount = 0;
+      let zombieCount = 0;
+      let lag24Count = 0;
+      let handoffCount = 0;
+      let overdueCount = 0;
+      let lagSum = 0;
+      let lagCount = 0;
+      let onTimeCount = 0;
+      let deadlineCount = 0;
+      let fcrCount = 0;
+      let resolvedCount = 0;
+      let ttfaSum = 0;
+      let ttfaCount = 0;
+      let mttrSum = 0;
+      let mttrCount = 0;
+      let totalHours = 0;
+
+      sample.forEach(t => {
+        totalHours += Number(t.hours_logged || 0);
+        const alerts = getTicketFindingAlerts(t);
+        if (alerts.length > 0) findingsTicketsCount++;
+
+        if (t.is_orphan_resolved) orphanCount++;
+        if (t.is_zombie) zombieCount++;
+        if (Number(t.avg_worklog_lag_hours || 0) > 24) lag24Count++;
+        if (t.is_handoff) handoffCount++;
+        if (t.is_overdue) overdueCount++;
+
+        if (t.avg_worklog_lag_hours !== null && t.avg_worklog_lag_hours !== undefined) {
+          lagSum += Number(t.avg_worklog_lag_hours);
+          lagCount++;
+        }
+        if (t.is_on_time !== null && t.is_on_time !== undefined) {
+          deadlineCount++;
+          if (t.is_on_time) onTimeCount++;
+        }
+        if (t.is_resolved) {
+          resolvedCount++;
+          if (t.is_fcr) fcrCount++;
+        }
+        if (t.ttfa_hours !== null && t.ttfa_hours !== undefined) {
+          ttfaSum += Number(t.ttfa_hours);
+          ttfaCount++;
+        }
+        if (t.resolution_hours !== null && t.resolution_hours !== undefined) {
+          mttrSum += Number(t.resolution_hours);
+          mttrCount++;
+        }
+      });
+
+      const findingsPct = n > 0 ? (findingsTicketsCount / n) * 100 : 0;
+      const avgLag = lagCount > 0 ? lagSum / lagCount : 0;
+      const onTimePct = deadlineCount > 0 ? (onTimeCount / deadlineCount) * 100 : 0;
+      const fcrPct = resolvedCount > 0 ? (fcrCount / resolvedCount) * 100 : 0;
+      const avgTtfa = ttfaCount > 0 ? ttfaSum / ttfaCount : 0;
+      const avgMttr = mttrCount > 0 ? mttrSum / mttrCount : 0;
+
+      // KPIs de la Muestra
+      document.getElementById('sampleTotalVal').textContent = `${n} tickets`;
+      document.getElementById('sampleCoverageBadge').textContent = `${fmt(coveragePct, 1)}% cobertura`;
+      document.getElementById('sampleUniverseSub').textContent = `De ${totalUniverse} tickets candidatos`;
+      const methodLabel = method === 'simple' ? 'Aleatorio Simple' : (method === 'stratified_agent' ? 'Estratificado x Agente' : (method === 'stratified_client' ? 'Estratificado x Cliente' : 'Estratificado x Temática'));
+      document.getElementById('sampleMethodSub').textContent = `${methodLabel}${seed ? ` (Semilla: ${seed})` : ''}`;
+
+      document.getElementById('sampleFindingsVal').textContent = `${findingsTicketsCount} tickets`;
+      document.getElementById('sampleFindingsBadge').textContent = `${fmt(findingsPct, 1)}% con alertas`;
+      document.getElementById('sampleFindingsBadge').className = `bi-kpi-delta ${findingsPct > 20 ? 'down-bad' : 'up-good'}`;
+      document.getElementById('sampleOrphansSub').textContent = `0h: ${orphanCount} · Zombies: ${zombieCount}`;
+      document.getElementById('sampleZombiesSub').textContent = `Vencidos: ${overdueCount}`;
+
+      document.getElementById('sampleLagVal').textContent = `${fmt(avgLag, 1)} h`;
+      document.getElementById('sampleLagBadge').textContent = `${lag24Count} tickets > 24h`;
+      document.getElementById('sampleLagBadge').className = `bi-kpi-delta ${lag24Count > 0 ? 'down-bad' : 'up-good'}`;
+      document.getElementById('sampleLagCriticalSub').textContent = `Desfase crítico: ${lag24Count}`;
+      document.getElementById('sampleHandoffsSub').textContent = `Handoffs: ${handoffCount}`;
+
+      document.getElementById('sampleOnTimeVal').textContent = deadlineCount > 0 ? `${fmt(onTimePct, 1)}%` : 'S/D';
+      document.getElementById('sampleOnTimeBadge').textContent = `${onTimeCount} en plazo`;
+      document.getElementById('sampleOverdueSub').textContent = `Vencidos: ${overdueCount}`;
+      document.getElementById('sampleFcrSub').textContent = `FCR: ${fmt(fcrPct, 1)}%`;
+
+      document.getElementById('sampleTtfaVal').textContent = avgTtfa > 0 ? `${fmt(avgTtfa, 1)} h` : '-';
+      document.getElementById('sampleMttrSub').textContent = avgMttr > 0 ? `MTTR Prom: ${fmt(avgMttr, 1)} h` : 'MTTR: -';
+      document.getElementById('sampleHoursTotalSub').textContent = `Horas Muestra: ${fmt(totalHours)} h`;
+
+      document.getElementById('sampleMetaSummaryText').textContent =
+        `Muestra de ${n} tickets extraída el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')}. Método: ${methodLabel}. Semilla: ${seed || 'Aleatoria'}. Tasa de hallazgos observada: ${fmt(findingsPct, 1)}%.`;
+
+      // Tabla de Muestra
+      const tbody = document.getElementById('sampleTableTbody');
+      tbody.innerHTML = sample.map(t => {
+        const alerts = getTicketFindingAlerts(t);
+        const alertsHtml = alerts.map(a =>
+          `<span class="badge" style="background:${a.color}; color:white; font-size:0.7rem; margin-right:4px;" title="${escapeHtml(a.desc)}">${escapeHtml(a.label)}</span>`
+        ).join('') || '<span class="badge badge-ok" style="font-size:0.7rem;">Sin anomalías (OK)</span>';
+
+        const ttfaStr = t.ttfa_hours !== null && t.ttfa_hours !== undefined ? `TTFA: ${fmt(t.ttfa_hours, 1)}h` : '-';
+        const mttrStr = t.resolution_hours !== null && t.resolution_hours !== undefined ? `MTTR: ${fmt(t.resolution_hours, 1)}h` : `Abierto: ${fmt(t.age_days, 1)}d`;
+        const lagBadge = Number(t.avg_worklog_lag_hours || 0) > 24
+          ? `<span class="badge badge-inc">${fmt(t.avg_worklog_lag_hours, 1)} h</span>`
+          : `${fmt(t.avg_worklog_lag_hours || 0, 1)} h`;
+
+        return `
+          <tr>
+            <th>
+              <a href="${JIRA_BASE_URL}/browse/${escapeHtml(t.jira_key)}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 800;">${escapeHtml(t.jira_key)}</a>
+              ${t.is_incident ? '<span class="badge badge-inc" style="margin-left:4px;">INC</span>' : ''}
+              <div style="font-size: 0.78rem; font-weight: normal; color: var(--text); margin-top: 3px; max-width: 250px;">${escapeHtml(t.summary)}</div>
+            </th>
+            <td>${escapeHtml(t.client)}</td>
+            <td>${escapeHtml(t.agent)}</td>
+            <td><span class="badge" style="background:rgba(139,92,246,0.15); color:#c4b5fd; font-size:0.7rem;">${escapeHtml(t.topic || 'General')}</span></td>
+            <td>${alertsHtml}</td>
+            <td><strong>${fmt(t.hours_logged)} h</strong></td>
+            <td>${lagBadge}</td>
+            <td style="font-size:0.8rem; color:var(--muted);">${ttfaStr}<br>${mttrStr}</td>
+            <td>
+              <button type="button" class="btn-bi" style="padding: 5px 10px; font-size: 0.76rem;" onclick="openTicketModal(${t.issue_id})">
+                Auditar Worklogs
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="9">Sin tickets en la muestra.</td></tr>';
+
+      container.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function exportSampleCsv() {
+      if (!currentSample.length) {
+        alert('No hay muestra generada para exportar.');
+        return;
+      }
+
+      const headers = [
+        'Muestra N°',
+        'Ticket',
+        'Cliente',
+        'Organización',
+        'Nivel SLA',
+        'Temática',
+        'Agente',
+        'Colaboración',
+        'Horas Imputadas',
+        'Worklogs',
+        'Desfase Carga (h)',
+        '1ª Atención TTFA (h)',
+        'MTTR (h)',
+        'Estado',
+        'Estado Plazo',
+        'Es Zombie',
+        'Auditoría',
+        'Alertas / Hallazgos Detectados',
+        'Fecha Creación',
+        'Resumen'
+      ];
+
+      const rows = currentSample.map((t, idx) => {
+        const alerts = getTicketFindingAlerts(t).map(a => a.label).join(' | ') || 'OK (Sin anomalías)';
+        return [
+          idx + 1,
+          t.jira_key,
+          t.client,
+          (t.organizations || []).join(', ') || t.organization,
+          t.service_level,
+          t.topic || '',
+          t.agent,
+          t.collaboration_type || '',
+          t.hours_logged,
+          t.worklog_count,
+          t.avg_worklog_lag_hours ?? '',
+          t.ttfa_hours ?? '',
+          t.resolution_hours ?? '',
+          t.status,
+          t.deadline_status || '',
+          t.is_zombie ? 'SÍ' : 'NO',
+          t.audit_category || '',
+          alerts,
+          fmtDate(t.created_date),
+          t.summary
+        ];
+      });
+
+      const csvContent = "\ufeff" + [headers.join(';')]
+        .concat(rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Muestra_Auditoria_QA_${document.getElementById('fromDate').value}_${document.getElementById('sampleFindingType').value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    document.getElementById('executeSamplingBtn').addEventListener('click', executeSampling);
+    document.getElementById('reSampleBtn').addEventListener('click', executeSampling);
+    document.getElementById('exportSampleCsvBtn').addEventListener('click', exportSampleCsv);
+
+    document.getElementById('sampleSizeMode').addEventListener('change', (e) => {
+      const input = document.getElementById('sampleSizeValue');
+      if (e.target.value === 'pct') {
+        input.value = '10';
+        input.min = '1';
+        input.max = '100';
+      } else {
+        input.value = '20';
+        input.min = '1';
+        input.max = '1000';
+      }
     });
 
     // Inicialización automática
