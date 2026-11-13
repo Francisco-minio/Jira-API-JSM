@@ -1864,3 +1864,506 @@ def build_visits_report(
         "tickets": ticket_rows,
         "daily_series": daily_series,
     }
+
+
+def _is_status_resolved(status: str | None) -> bool:
+    if not status:
+        return False
+    norm = _normalize_text(status) or ""
+    resolved_keywords = (
+        "resuelto", "resolved", "cerrado", "closed", "done", "finalizado",
+        "completado", "completed", "terminado", "listo", "solucionado", "cancelado"
+    )
+    return any(kw in norm for kw in resolved_keywords)
+
+
+def _classify_ticket_topic(summary: str, comments_text: str = "") -> str:
+    norm = _normalize_text(f"{summary} {comments_text}") or ""
+    topic_rules = [
+        ("Correo / M365 / Licencias", (
+            "correo", "mail", "outlook", "365", "office", "sharepoint", "teams",
+            "onedrive", "licencia", "exchange", "buzon", "spam", "firma correo"
+        )),
+        ("Red / Conectividad / VPN", (
+            "vpn", "wifi", "internet", "red", "firewall", "fortinet", "fortigate",
+            "switch", "router", "mikrotik", "cableado", "ip", "enlace", "conexion", "fibra"
+        )),
+        ("Impresoras / Periféricos", (
+            "impresora", "impresion", "scanner", "escaner", "toner", "zebra",
+            "plotter", "multifuncional", "etiquetadora"
+        )),
+        ("Servidores / Respaldo / Cloud", (
+            "servidor", "server", "backup", "respaldo", "acronis", "vm", "virtual",
+            "azure", "aws", "active directory", "dominio", "dns", "hosting", "cpanel", "nas", "sql"
+        )),
+        ("Accesos / Cuentas / Seguridad", (
+            "acceso", "clave", "contrasena", "password", "credencial", "bloqueo",
+            "permiso", "carpeta", "antivirus", "seguridad", "alta ", "baja ", "crear usuario", "usuario"
+        )),
+        ("Software / ERP / Contabilidad", (
+            "erp", "softland", "defontana", "sap", "contabilidad", "factura", "sii",
+            "certificado", "sistema", "programa", "instalacion", "actualizar", "actualizacion",
+            "excel", "word", "pdf", "anydesk", "teamviewer", "windows", "mac"
+        )),
+        ("Equipos / Hardware / Mantención", (
+            "equipo", "notebook", "pc", "computador", "laptop", "mantencion", "mantenimiento",
+            "formateo", "disco", "ssd", "ram", "pantalla", "monitor", "teclado", "mouse",
+            "bateria", "cargador", "revision", "cambio de"
+        )),
+        ("Visitas / Terreno", (
+            "visita", "terreno", "presencial"
+        )),
+    ]
+    for label, keywords in topic_rules:
+        if any(kw in norm for kw in keywords):
+            return label
+    return "Soporte General / Otros"
+
+
+def _parse_worklog_lag_hours(w: JiraWorklog) -> float:
+    from app.services.jira import parse_jira_datetime
+    if not w.started_at:
+        return 0.0
+    started_local = to_tz_aware(w.started_at, settings.app_timezone)
+    if not started_local:
+        return 0.0
+    raw_created = (w.raw_payload or {}).get("created")
+    created_dt = parse_jira_datetime(raw_created) if raw_created else w.updated_at_jira
+    created_local = to_tz_aware(created_dt, settings.app_timezone) if created_dt else None
+    if not created_local:
+        return 0.0
+    diff_h = (created_local - started_local).total_seconds() / 3600.0
+    return round(max(diff_h, 0.0), 2)
+
+
+def _extract_bi_records(
+    session: Session,
+    p_start: date,
+    p_end: date,
+    child_to_parent: dict[int, int],
+    id_to_key: dict[int, str],
+    include_worklogs: bool = True,
+) -> list[dict]:
+    range_s = _range_start(p_start)
+    range_e = _range_end(p_end)
+
+    worklogs = session.scalars(
+        select(JiraWorklog)
+        .options(selectinload(JiraWorklog.author_agent))
+        .where(
+            and_(
+                JiraWorklog.started_at.is_not(None),
+                JiraWorklog.started_at >= range_s,
+                JiraWorklog.started_at <= range_e,
+            )
+        )
+    ).all()
+
+    issue_worklogs: dict[int, list[JiraWorklog]] = defaultdict(list)
+    issue_hours: dict[int, float] = defaultdict(float)
+    for w in worklogs:
+        eff_id = child_to_parent.get(w.issue_id, w.issue_id)
+        issue_worklogs[eff_id].append(w)
+        issue_hours[eff_id] += w.time_spent_seconds / 3600.0
+
+    worklog_issue_ids = set(issue_worklogs.keys())
+
+    issues = session.scalars(
+        select(JiraIssue)
+        .options(
+            selectinload(JiraIssue.organizations),
+            selectinload(JiraIssue.assignee_agent),
+            selectinload(JiraIssue.reporter_client),
+        )
+        .where(
+            or_(
+                and_(
+                    JiraIssue.created_at_jira.is_not(None),
+                    JiraIssue.created_at_jira >= range_s,
+                    JiraIssue.created_at_jira <= range_e,
+                ),
+                and_(
+                    JiraIssue.resolved_at_jira.is_not(None),
+                    JiraIssue.resolved_at_jira >= range_s,
+                    JiraIssue.resolved_at_jira <= range_e,
+                ),
+                JiraIssue.id.in_(worklog_issue_ids) if worklog_issue_ids else False,
+            )
+        )
+    ).all()
+
+    issues = [issue for issue in issues if issue.id not in child_to_parent]
+    now_dt = datetime.now(app_tz)
+    ref_end_dt = min(now_dt, range_e)
+
+    records: list[dict] = []
+    for issue in sorted(
+        issues,
+        key=lambda item: item.created_at_jira or datetime.min.replace(tzinfo=app_tz),
+        reverse=True,
+    ):
+        w_list = sorted(
+            issue_worklogs.get(issue.id, []),
+            key=lambda item: item.started_at or datetime.min.replace(tzinfo=app_tz),
+        )
+        hrs = round(issue_hours.get(issue.id, 0.0), 2)
+        sl_label = _issue_service_level_label(issue)
+        sl_upper = sl_label.upper()
+        hrs_l3 = hrs if "L3" in sl_upper else 0.0
+        hrs_l1_l2 = hrs if ("L1" in sl_upper or "L2" in sl_upper) else 0.0
+
+        orgs = [org.name for org in issue.organizations if org.name]
+        primary_org = orgs[0] if orgs else "Sin organización"
+        client_label = _issue_client_label(issue)
+
+        first_wl_author = None
+        distinct_authors: set[str] = set()
+        wl_lags: list[float] = []
+        wl_comments_list: list[str] = []
+
+        for w in w_list:
+            if w.author_agent and w.author_agent.name:
+                if first_wl_author is None:
+                    first_wl_author = w.author_agent.name
+                distinct_authors.add(w.author_agent.name)
+            wl_lags.append(_parse_worklog_lag_hours(w))
+            if w.comment:
+                wl_comments_list.append(str(w.comment))
+
+        assignee_name = issue.assignee_agent.name if issue.assignee_agent and issue.assignee_agent.name else None
+        agent_label = assignee_name or first_wl_author or "Sin asignar"
+
+        is_visit, visit_cat = _is_issue_visit(issue)
+        visit_label = visit_cat if is_visit else "Remoto / Normal"
+
+        # Categoría de Ticket y Tipo de Atención desde custom fields o inferencia
+        raw_fields = (issue.raw_payload or {}).get("fields") or {}
+        ticket_category = (
+            _extract_issue_field_text(issue, settings.jira_categoria_ticket_field_id)
+            or issue.issue_type
+            or "Soporte General"
+        )
+        attention_type = (
+            _extract_issue_field_text(issue, settings.jira_tipo_atencion_field_id)
+            or (visit_cat if is_visit else "Atención Remota")
+        )
+
+        created_local = to_tz_aware(issue.created_at_jira, settings.app_timezone) if issue.created_at_jira else None
+        updated_local = to_tz_aware(issue.updated_at_jira, settings.app_timezone) if issue.updated_at_jira else None
+        resolved_local = to_tz_aware(issue.resolved_at_jira, settings.app_timezone) if issue.resolved_at_jira else None
+
+        created_in_period = bool(created_local and range_s <= created_local <= range_e)
+        status_resolved = _is_status_resolved(issue.status)
+        resolved_in_period = bool(
+            (resolved_local and range_s <= resolved_local <= range_e)
+            or (created_in_period and status_resolved and resolved_local is None)
+        )
+        is_resolved = bool(resolved_local is not None or status_resolved)
+
+        eff_resolved_local = resolved_local or (updated_local if status_resolved else None)
+
+        resolution_hours: float | None = None
+        if created_local and eff_resolved_local and eff_resolved_local >= created_local:
+            resolution_hours = round((eff_resolved_local - created_local).total_seconds() / 3600.0, 2)
+
+        age_days = 0.0
+        if created_local:
+            end_ref = eff_resolved_local if eff_resolved_local else now_dt
+            age_days = round(max((end_ref - created_local).total_seconds() / 86400.0, 0.0), 1)
+
+        # 1. Tiempo de Primera Atención (TTFA) y 2. Brecha entre Última Actividad y Cierre
+        ttfa_hours: float | None = None
+        close_gap_hours: float | None = None
+        first_wl_local = to_tz_aware(w_list[0].started_at, settings.app_timezone) if w_list and w_list[0].started_at else None
+        last_wl_local = to_tz_aware(w_list[-1].started_at, settings.app_timezone) if w_list and w_list[-1].started_at else None
+
+        if created_local and first_wl_local:
+            ttfa_hours = round(max((first_wl_local - created_local).total_seconds() / 3600.0, 0.0), 2)
+
+        if is_resolved and eff_resolved_local and last_wl_local:
+            close_gap_hours = round(max((eff_resolved_local - last_wl_local).total_seconds() / 3600.0, 0.0), 2)
+
+        # 3. Tickets Estancados ("Zombie Tickets"): Abiertos sin actividad reciente (>= 7 días)
+        last_activity_local = max(
+            [dt for dt in (updated_local, last_wl_local, created_local) if dt is not None],
+            default=None,
+        )
+        inactivity_days = 0.0
+        if not is_resolved and last_activity_local:
+            inactivity_days = round(max((ref_end_dt - last_activity_local).total_seconds() / 86400.0, 0.0), 1)
+        is_zombie = bool(not is_resolved and inactivity_days >= 7.0)
+
+        # 4. Desfase de Registro de Horas (Worklog Lag)
+        avg_worklog_lag_hours = round(sum(wl_lags) / len(wl_lags), 2) if wl_lags else 0.0
+
+        # 5. Índice de Colaboración / Handoffs (Multi-Agente)
+        authors_count = len(distinct_authors)
+        is_multi_agent = authors_count > 1
+        is_handoff = bool(
+            is_multi_agent
+            or (assignee_name and distinct_authors and any(a != assignee_name for a in distinct_authors))
+        )
+        collaboration_type = (
+            "Multi-Agente (2+ técnicos)"
+            if is_multi_agent
+            else ("Handoff (Autor ≠ Asignado)" if is_handoff else "Agente Único")
+        )
+
+        # 7. Tickets "Huérfanos" de Imputación y Auditoría de Calidad de Datos
+        is_orphan_resolved = bool(is_resolved and len(w_list) == 0 and hrs == 0)
+        missing_client = client_label == "Sin cliente"
+        missing_sla = sl_label == "Sin nivel"
+        missing_assignee = assignee_name is None
+
+        if is_orphan_resolved:
+            audit_category = "Resuelto sin Horas (0h)"
+        elif missing_client:
+            audit_category = "Falta Cliente"
+        elif missing_sla:
+            audit_category = "Falta Nivel SLA"
+        elif missing_assignee:
+            audit_category = "Sin Agente Asignado"
+        else:
+            audit_category = "Datos Completos (OK)"
+
+        # 8. Análisis de Recurrencia y Temáticas
+        topic = _classify_ticket_topic(issue.summary or "", " ".join(wl_comments_list[:3]))
+
+        # 9. Cumplimiento de Plazos y Puntualidad (duedate / fecha_inicio / fecha visita)
+        due_date_str = raw_fields.get("duedate")
+        if not due_date_str and is_visit and issue.summary:
+            m_date = re.search(r"(\d{2})[-/](\d{2})[-/](\d{4})", issue.summary)
+            if m_date:
+                due_date_str = f"{m_date.group(3)}-{m_date.group(2)}-{m_date.group(1)}"
+
+        due_date_obj: date | None = None
+        if isinstance(due_date_str, str) and re.match(r"^\d{4}-\d{2}-\d{2}", due_date_str):
+            try:
+                due_date_obj = date.fromisoformat(due_date_str[:10])
+            except ValueError:
+                due_date_obj = None
+
+        has_due_date = due_date_obj is not None
+        is_on_time: bool | None = None
+        is_overdue = False
+        if due_date_obj:
+            if is_resolved:
+                res_d = eff_resolved_local.date() if eff_resolved_local else (created_local.date() if created_local else due_date_obj)
+                is_on_time = res_d <= due_date_obj
+                deadline_status = "En Plazo (On-Time)" if is_on_time else "Resuelto con Atraso"
+            else:
+                is_overdue = p_end > due_date_obj
+                deadline_status = "Vencido (Overdue)" if is_overdue else "Abierto en Plazo"
+        else:
+            # Evaluación contra objetivo de ciclo estándar si no tiene duedate explícito
+            target_h = 8.0 if issue.is_incident else (24.0 if "L1" in sl_upper or "L2" in sl_upper else 72.0)
+            if is_resolved and resolution_hours is not None:
+                is_on_time = resolution_hours <= target_h
+                deadline_status = "En Plazo (SLA Target)" if is_on_time else "Excede SLA Target"
+            else:
+                is_overdue = (age_days * 24.0) > target_h
+                deadline_status = "Vencido (SLA Target)" if is_overdue else "Abierto en Plazo"
+
+        # 10. Precisión de Estimación (timetracking / timeoriginalestimate)
+        est_sec = (
+            raw_fields.get("timeoriginalestimate")
+            or raw_fields.get("aggregatetimeoriginalestimate")
+            or ((raw_fields.get("timetracking") or {}).get("originalEstimateSeconds"))
+        )
+        estimated_hours: float | None = round(float(est_sec) / 3600.0, 2) if est_sec else None
+
+        # 12. SLAs Nativos JSM, Reaberturas (changelog) y FCR (First Contact Resolution)
+        reopen_count = 0
+        changelog_histories = ((issue.raw_payload or {}).get("changelog") or {}).get("histories") or []
+        for hist in changelog_histories:
+            for item in hist.get("items") or []:
+                if item.get("field") == "status":
+                    from_st = item.get("fromString")
+                    to_st = item.get("toString")
+                    if _is_status_resolved(from_st) and not _is_status_resolved(to_st):
+                        reopen_count += 1
+
+        jsm_sla_breached: bool | None = None
+        for f_val in raw_fields.values():
+            if isinstance(f_val, dict) and ("completedCycles" in f_val or "ongoingCycle" in f_val):
+                cycles = list(f_val.get("completedCycles") or [])
+                if f_val.get("ongoingCycle"):
+                    cycles.append(f_val["ongoingCycle"])
+                for cyc in cycles:
+                    if isinstance(cyc, dict) and "breached" in cyc:
+                        if cyc["breached"]:
+                            jsm_sla_breached = True
+                        elif jsm_sla_breached is None:
+                            jsm_sla_breached = False
+
+        is_reopened = reopen_count > 0
+        is_fcr = bool(is_resolved and len(w_list) == 1 and not is_handoff and not is_reopened)
+
+        rec: dict = {
+            "issue_id": issue.id,
+            "jira_key": issue.jira_key,
+            "summary": issue.summary or "",
+            "client": client_label,
+            "organizations": orgs,
+            "organization": primary_org,
+            "agent": agent_label,
+            "assignee_name": assignee_name,
+            "reporter": issue.reporter_client.name if issue.reporter_client else "Sin informador",
+            "service_level": sl_label,
+            "status": issue.status or "Sin estado",
+            "priority": issue.priority or "Sin prioridad",
+            "issue_type": issue.issue_type or "Ticket",
+            "ticket_category": ticket_category,
+            "attention_type": attention_type,
+            "topic": topic,
+            "is_incident": bool(issue.is_incident),
+            "demand_type": "Incidencia" if issue.is_incident else "Solicitud / Requerimiento",
+            "is_visit": is_visit,
+            "visit_type": visit_label,
+            "created_at": created_local.isoformat() if created_local else None,
+            "created_date": created_local.strftime("%Y-%m-%d") if created_local else None,
+            "created_month": created_local.strftime("%Y-%m") if created_local else None,
+            "created_week": _week_start(created_local.date()).isoformat() if created_local else None,
+            "resolved_at": eff_resolved_local.isoformat() if eff_resolved_local else None,
+            "resolved_date": eff_resolved_local.strftime("%Y-%m-%d") if eff_resolved_local else None,
+            "due_date": due_date_obj.isoformat() if due_date_obj else None,
+            "has_due_date": has_due_date,
+            "is_on_time": is_on_time,
+            "is_overdue": is_overdue,
+            "deadline_status": deadline_status,
+            "created_in_period": created_in_period,
+            "resolved_in_period": resolved_in_period,
+            "is_resolved": is_resolved,
+            "resolution_hours": resolution_hours,
+            "ttfa_hours": ttfa_hours,
+            "close_gap_hours": close_gap_hours,
+            "age_days": age_days,
+            "inactivity_days": inactivity_days,
+            "is_zombie": is_zombie,
+            "avg_worklog_lag_hours": avg_worklog_lag_hours,
+            "distinct_authors_count": authors_count,
+            "is_multi_agent": is_multi_agent,
+            "is_handoff": is_handoff,
+            "collaboration_type": collaboration_type,
+            "is_orphan_resolved": is_orphan_resolved,
+            "missing_client": missing_client,
+            "missing_sla": missing_sla,
+            "missing_assignee": missing_assignee,
+            "audit_category": audit_category,
+            "estimated_hours": estimated_hours,
+            "reopen_count": reopen_count,
+            "is_reopened": is_reopened,
+            "is_fcr": is_fcr,
+            "jsm_sla_breached": jsm_sla_breached,
+            "hours_logged": hrs,
+            "hours_l1_l2": round(hrs_l1_l2, 2),
+            "hours_l3": round(hrs_l3, 2),
+            "worklog_count": len(w_list),
+            "attended_in_period": len(w_list) > 0,
+        }
+
+        if include_worklogs:
+            wl_items = []
+            for idx, w in enumerate(w_list):
+                w_local = to_tz_aware(w.started_at, settings.app_timezone) if w.started_at else None
+                w_date = w_local.strftime("%Y-%m-%d") if w_local else None
+                w_week = _week_start(w_local.date()).isoformat() if w_local else None
+                w_month = w_local.strftime("%Y-%m") if w_local else None
+                comment_str = (
+                    f"[{id_to_key.get(w.issue_id)}] {w.comment}"
+                    if w.issue_id != issue.id and w.comment
+                    else (f"[{id_to_key.get(w.issue_id)}]" if w.issue_id != issue.id else (w.comment or ""))
+                )
+                wl_items.append({
+                    "worklog_id": w.jira_worklog_id,
+                    "started_at": w_local.isoformat() if w_local else None,
+                    "date": w_date,
+                    "week_start": w_week,
+                    "month": w_month,
+                    "author_name": w.author_agent.name if w.author_agent else agent_label,
+                    "hours": round(w.time_spent_seconds / 3600.0, 2),
+                    "lag_hours": wl_lags[idx] if idx < len(wl_lags) else 0.0,
+                    "comment": comment_str,
+                })
+            rec["worklogs"] = wl_items
+
+        records.append(rec)
+
+    return records
+
+
+def build_bi_dashboard_data(session: Session, start_date: date, end_date: date) -> dict:
+    _, child_to_parent, id_to_key = _build_subtask_maps(session)
+
+    days_span = max((end_date - start_date).days + 1, 1)
+    prev_end = start_date - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=days_span - 1)
+
+    curr_b_days = business_days_between(start_date, end_date)
+    prev_b_days = business_days_between(prev_start, prev_end)
+
+    curr_capacity = expected_capacity_hours(start_date, end_date, settings.daily_hours)
+    prev_capacity = expected_capacity_hours(prev_start, prev_end, settings.daily_hours)
+
+    active_agents = session.scalars(select(Agent).where(Agent.active.is_(True)).order_by(Agent.name)).all()
+    agents_meta = [
+        {
+            "id": ag.id,
+            "name": ag.name,
+            "email": ag.email,
+            "capacity_hours": curr_capacity,
+        }
+        for ag in active_agents
+    ]
+
+    # Meta de semanas hábiles para el periodo actual
+    week_days_map: dict[date, list[date]] = defaultdict(list)
+    for d in curr_b_days:
+        week_days_map[_week_start(d)].append(d)
+
+    weekly_meta = []
+    for ws in sorted(week_days_map.keys()):
+        w_days = week_days_map[ws]
+        p_from = w_days[0]
+        p_to = w_days[-1]
+        holidays = _holiday_names_for_week(ws, start_date, end_date)
+        weekly_meta.append({
+            "week_start": ws.isoformat(),
+            "week_end": (ws + timedelta(days=4)).isoformat(),
+            "period_from": p_from.isoformat(),
+            "period_to": p_to.isoformat(),
+            "label": f"{_format_display_date(p_from)} al {_format_display_date(p_to)}",
+            "business_days": len(w_days),
+            "expected_capacity_hours": float(len(w_days) * settings.daily_hours),
+            "holiday_names": holidays,
+        })
+
+    current_records = _extract_bi_records(
+        session, start_date, end_date, child_to_parent, id_to_key, include_worklogs=True
+    )
+    previous_records = _extract_bi_records(
+        session, prev_start, prev_end, child_to_parent, id_to_key, include_worklogs=False
+    )
+
+    return {
+        "period": {
+            "from": start_date.isoformat(),
+            "to": end_date.isoformat(),
+            "days_span": days_span,
+            "business_days": len(curr_b_days),
+            "business_dates": [d.isoformat() for d in curr_b_days],
+            "expected_capacity_hours": curr_capacity,
+            "daily_hours_setting": settings.daily_hours,
+        },
+        "previous_period": {
+            "from": prev_start.isoformat(),
+            "to": prev_end.isoformat(),
+            "days_span": days_span,
+            "business_days": len(prev_b_days),
+            "expected_capacity_hours": prev_capacity,
+        },
+        "agents": agents_meta,
+        "weekly_meta": weekly_meta,
+        "tickets": current_records,
+        "previous_tickets": previous_records,
+    }

@@ -43,6 +43,12 @@ class JiraClient:
             "resolutiondate",
             "subtasks",
             "parent",
+            "duedate",
+            "timetracking",
+            "timeoriginalestimate",
+            "aggregatetimeoriginalestimate",
+            "labels",
+            "components",
         ]
         for field in extra_fields or []:
             if field and field not in fields:
@@ -51,6 +57,7 @@ class JiraClient:
             "jql": jql,
             "maxResults": max_results,
             "fields": ",".join(fields),
+            "expand": "changelog",
         }
         if next_page_token:
             params["nextPageToken"] = next_page_token

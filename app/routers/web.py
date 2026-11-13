@@ -25,13 +25,32 @@ def _require_user(current_user: Optional[User]):
 
 
 @router.get("/", response_class=HTMLResponse)
-def dashboard(request: Request, current_user: Optional[User] = Depends(get_current_user_optional)):
+def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
     redir = _require_user(current_user)
     if redir:
         return redir
 
+    from sqlalchemy import select, func
+    from app.models.entities import JiraIssue, JiraWorklog
+
     end = date.today()
     start = end - timedelta(days=30)
+
+    recent_count = db.scalar(
+        select(func.count(JiraIssue.id)).where(JiraIssue.created_at_jira >= start)
+    ) or 0
+    if recent_count == 0:
+        max_dt = db.scalar(select(func.max(JiraIssue.created_at_jira))) or db.scalar(
+            select(func.max(JiraWorklog.started_at))
+        )
+        if max_dt:
+            end = max_dt.date()
+            start = end - timedelta(days=30)
+
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
@@ -170,3 +189,20 @@ def visits_report(request: Request, current_user: Optional[User] = Depends(get_c
             "current_user": current_user,
         },
     )
+
+
+@router.get("/bulk-operations", response_class=HTMLResponse)
+def bulk_operations(request: Request, current_user: Optional[User] = Depends(get_current_user_optional)):
+    redir = _require_user(current_user)
+    if redir:
+        return redir
+
+    return templates.TemplateResponse(
+        request=request,
+        name="bulk_operations.html",
+        context={
+            "jira_base_url": settings.jira_base_url,
+            "current_user": current_user,
+        },
+    )
+

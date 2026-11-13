@@ -288,6 +288,9 @@ def sync_from_jira(session: Session, from_date: date | None = None, to_date: dat
                 settings.jira_organization_field_id,
                 settings.jira_client_field_id,
                 settings.jira_service_level_field_id,
+                settings.jira_tipo_atencion_field_id,
+                settings.jira_categoria_ticket_field_id,
+                settings.jira_fecha_inicio_field_id,
             ],
         )
         issues = payload.get("issues", [])
@@ -352,10 +355,15 @@ def sync_single_issue_by_key(session: Session, key: str) -> None:
         "fields": ",".join([
             "summary", "issuetype", "status", "priority", "project", "assignee", "reporter",
             "created", "updated", "resolutiondate", "subtasks", "parent",
+            "duedate", "timetracking", "timeoriginalestimate", "aggregatetimeoriginalestimate",
             settings.jira_organization_field_id,
             settings.jira_client_field_id,
-            settings.jira_service_level_field_id
-        ])
+            settings.jira_service_level_field_id,
+            settings.jira_tipo_atencion_field_id,
+            settings.jira_categoria_ticket_field_id,
+            settings.jira_fecha_inicio_field_id,
+        ]),
+        "expand": "changelog",
     }, timeout=60)
     res.raise_for_status()
     issue_payload = res.json()

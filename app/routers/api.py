@@ -35,6 +35,7 @@ from app.services.reports import (
     build_hours_consumption_report,
     get_distinct_issue_statuses,
     build_visits_report,
+    build_bi_dashboard_data,
 )
 from app.services.pdf_report import generate_hours_consumption_pdf, generate_visits_report_pdf
 from app.services.sync import sync_from_jira, sync_single_issue_by_key
@@ -161,6 +162,15 @@ def export_clients(
 @router.get("/organizations", response_model=list[OrganizationResponse])
 def list_organizations(db: Session = Depends(get_db)):
     return db.scalars(select(Organization).where(Organization.active.is_(True)).order_by(Organization.name)).all()
+
+
+@router.get("/reports/bi-dashboard")
+def reports_bi_dashboard(
+    from_date: date = Query(...),
+    to_date: date = Query(...),
+    db: Session = Depends(get_db),
+):
+    return build_bi_dashboard_data(db, from_date, to_date)
 
 
 @router.get("/reports/overview", response_model=OverviewReport)

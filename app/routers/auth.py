@@ -81,8 +81,9 @@ def login_page(request: Request, current_user: Optional[User] = Depends(get_curr
 
 @router.post("/api/auth/login")
 def login_api(payload: LoginPayload, response: Response, db: Session = Depends(get_db)):
-    """Endpoint de autenticación por usuario y contraseña."""
-    user = db.scalar(select(User).where(User.username == payload.username.strip()))
+    from sqlalchemy import or_
+    u_val = payload.username.strip()
+    user = db.scalar(select(User).where(or_(User.username == u_val, User.email == u_val)))
     if not user or not user.active or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,0 +1,1128 @@
+{% extends "base.html" %}
+
+{% block title %}Edición Masiva de Tickets | {{ request.app.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .bulk-container {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    margin-bottom: 50px;
+  }
+
+  .grid-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 1024px) {
+    .grid-two {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--panel-shadow);
+    border-radius: 20px;
+    padding: 26px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.4), transparent);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .panel-title svg {
+    color: var(--accent);
+  }
+
+  .badge-step {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+
+  .field-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .field input, .field select, .field textarea {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
+    background: rgba(15, 23, 42, 0.9);
+  }
+
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    border: 1px solid var(--panel-border);
+  }
+
+  .mode-toggle button {
+    flex: 1;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: none;
+    transition: all 0.2s ease;
+  }
+
+  .mode-toggle button.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  }
+
+  .jql-helper {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .jql-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .jql-tag {
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--accent);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    transition: all 0.2s;
+  }
+
+  .jql-tag:hover {
+    background: rgba(14, 165, 233, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .table-container {
+    overflow-x: auto;
+    max-height: 480px;
+    overflow-y: auto;
+    border-radius: 14px;
+    border: 1px solid var(--panel-border);
+    background: rgba(3, 7, 18, 0.4);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 2;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--panel-border);
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  tr.selected td {
+    background: rgba(14, 165, 233, 0.08);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: rgba(148, 163, 184, 0.12);
+    color: var(--muted);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .status-badge.in-progress {
+    background: rgba(14, 165, 233, 0.15);
+    color: var(--accent);
+    border-color: rgba(14, 165, 233, 0.3);
+  }
+
+  .status-badge.done {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .org-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .ticket-link {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ticket-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Switch seguro Dry Run */
+  .switch-container {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 14px;
+    margin-top: 18px;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    transition: .3s;
+    border-radius: 26px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background: linear-gradient(135deg, var(--warn), #f59e0b);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+
+  /* Barra de Progreso y Modal de Ejecución */
+  .progress-bar-container {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    height: 12px;
+    overflow: hidden;
+    position: relative;
+    margin: 16px 0;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.3s ease;
+  }
+
+  .log-console {
+    background: #020617;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 16px;
+    max-height: 280px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .log-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .log-item.success { color: #34d399; }
+  .log-item.error { color: #f87171; }
+  .log-item.dryrun { color: #fbbf24; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+  .empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text);
+    box-shadow: none;
+    border: 1px solid var(--panel-border);
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+  .btn-danger:hover {
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1>Edición Masiva de Tickets</h1>
+      <p style="color: var(--muted); margin: 0; font-size: 1.05rem;">
+        Filtra tickets en Jira mediante parámetros guiados o JQL directo y aplica modificaciones seguras en lote.
+      </p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button type="button" class="btn-secondary" onclick="resetAll()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        Limpiar Filtros
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="bulk-container">
+  
+  <!-- GRID: PASO 1 (FILTROS) & PASO 2 (ACCIÓN A EJECUTAR) -->
+  <div class="grid-two">
+    
+    <!-- PASO 1: FILTROS Y BÚSQUEDA -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Paso 1: Filtrar Tickets
+        </div>
+        <span class="badge-step">BÚSQUEDA</span>
+      </div>
+
+      <div class="mode-toggle">
+        <button type="button" id="btnModeAssisted" class="active" onclick="setSearchMode('assisted')">Filtros Guiados</button>
+        <button type="button" id="btnModeJql" onclick="setSearchMode('jql')">JQL Avanzado</button>
+      </div>
+
+      <!-- Filtros Guiados -->
+      <div id="assistedFilters">
+        <div class="field-group">
+          <div class="field">
+            <label for="filterProject">Proyecto</label>
+            <select id="filterProject">
+              <option value="">Todos los proyectos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterStatus">Estado</label>
+            <select id="filterStatus">
+              <option value="">Todos los estados</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field">
+            <label for="filterOrg">Organización (JSM)</label>
+            <select id="filterOrg">
+              <option value="">Cualquier organización</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterLabel">Etiqueta (Label)</label>
+            <input type="text" id="filterLabel" placeholder="Ej: soporte, urgente">
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 20px;">
+          <label for="filterText">Buscar por Texto / Resumen</label>
+          <input type="text" id="filterText" placeholder="Palabras clave en el título o descripción...">
+        </div>
+      </div>
+
+      <!-- JQL Avanzado -->
+      <div id="jqlFilters" style="display: none;">
+        <div class="field" style="margin-bottom: 12px;">
+          <label for="customJql">Sentencia JQL</label>
+          <textarea id="customJql" rows="4" placeholder="Ej: Organizations = 'MaqSur' AND status != 'Cerrado' ORDER BY key DESC" style="resize: vertical;"></textarea>
+        </div>
+        <div class="jql-helper">Consultas frecuentes de ejemplo:</div>
+        <div class="jql-tags">
+          <span class="jql-tag" onclick="setJqlExample('Organizations = \"MaqSur\"')">Organizations = "MaqSur"</span>
+          <span class="jql-tag" onclick="setJqlExample('project = MABC AND Organizations is not empty')">MABC con Organización</span>
+          <span class="jql-tag" onclick="setJqlExample('project = MABC AND status in (\"En Curso\", \"En Progreso\")')">MABC en progreso</span>
+          <span class="jql-tag" onclick="setJqlExample('labels is not empty')">Tickets con etiquetas</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; pt-2; border-top: 1px solid rgba(255,255,255,0.06);">
+        <div class="field" style="flex-direction: row; align-items: center; gap: 8px;">
+          <label for="previewLimit" style="margin: 0; font-size: 0.82rem;">Límite:</label>
+          <select id="previewLimit" style="padding: 6px 10px; width: 90px;">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <button type="button" id="btnSearch" onclick="previewTickets()" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span id="btnSearchText">Buscar Tickets</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 2: DEFINIR ACCIÓN MASIVA -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Paso 2: Acción a Aplicar
+        </div>
+        <span class="badge-step" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">MODIFICACIÓN</span>
+      </div>
+
+      <div class="field" style="margin-bottom: 18px;">
+        <label for="operationSelect">Tipo de Operación</label>
+        <select id="operationSelect" onchange="renderOperationParams()">
+          <optgroup label="Organizaciones (JSM)">
+            <option value="remove_org" selected>Remover Organización específica</option>
+            <option value="clear_orgs">Vaciar campo Organización (dejar sin organizaciones)</option>
+            <option value="add_org">Agregar Organización</option>
+          </optgroup>
+          <optgroup label="Etiquetas (Labels)">
+            <option value="add_label">Añadir Etiqueta</option>
+            <option value="remove_label">Quitar Etiqueta</option>
+          </optgroup>
+          <optgroup label="Responsable (Assignee)">
+            <option value="clear_assignee">Desasignar Responsable (Sin Asignar)</option>
+          </optgroup>
+          <optgroup label="Comentarios">
+            <option value="add_comment">Agregar Comentario a todos los tickets</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Contenedor dinámico de parámetros de la operación -->
+      <div id="operationParamsContainer" style="min-height: 90px;">
+        <!-- Se llena con renderOperationParams() -->
+      </div>
+
+      <!-- Toggle Modo Simulación (Dry Run) -->
+      <div class="switch-container">
+        <label class="switch">
+          <input type="checkbox" id="dryRunToggle" checked onchange="toggleDryRunBadge()">
+          <span class="slider"></span>
+        </label>
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--warn); display: flex; align-items: center; gap: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span id="dryRunTitle">Modo Simulación Activo (Dry-Run)</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 2px;" id="dryRunDesc">
+            Los tickets no se modificarán en Jira. Permite comprobar con total seguridad cuáles se verían afectados.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
+        <button type="button" id="btnExecute" onclick="confirmAndExecute()" class="btn-danger" style="display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; font-size: 1.05rem; padding: 14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span id="btnExecuteText">Simular en Tickets Seleccionados (0)</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PASO 3: TABLA DE PREVISUALIZACIÓN Y SELECCIÓN -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        Paso 3: Selección de Tickets
+        <span id="selectionCounter" style="font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-left: 8px;">(0 encontrados)</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="button" class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="toggleSelectAll(true)">Marcar Todos</button>
+        <button type="button" class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="toggleSelectAll(false)">Desmarcar Todos</button>
+      </div>
+    </div>
+
+    <!-- Filtro rápido en cliente sobre la tabla -->
+    <div style="margin-bottom: 14px; display: flex; gap: 12px; align-items: center;">
+      <div style="flex: 1; position: relative;">
+        <input type="text" id="tableFilterInput" placeholder="Filtrar resultados en pantalla por clave, resumen, estado..." oninput="filterTableLocally()" style="width: 100%; padding-left: 36px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </div>
+      <div id="jqlExecutedBadge" style="font-size: 0.8rem; color: var(--muted); font-family: monospace; max-width: 450px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 44px; text-align: center;">
+              <input type="checkbox" id="thSelectAll" onchange="toggleSelectAll(this.checked)">
+            </th>
+            <th style="width: 130px;">Clave</th>
+            <th>Resumen</th>
+            <th style="width: 140px;">Estado</th>
+            <th style="width: 140px;">Organización</th>
+            <th style="width: 150px;">Asignado</th>
+            <th style="width: 110px;">Etiquetas</th>
+          </tr>
+        </thead>
+        <tbody id="ticketsTableBody">
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <div style="font-weight: 600; font-size: 1rem; color: var(--text);">No hay tickets cargados</div>
+                <div style="font-size: 0.85rem; margin-top: 4px;">Usa los filtros del Paso 1 y haz clic en "Buscar Tickets" para previsualizarlos.</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL / MODAL DE PROGRESO Y RESULTADOS -->
+  <div id="executionPanel" class="panel" style="display: none;">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        Registro de Ejecución en Vivo
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-secondary" id="btnDownloadReport" style="display: none;" onclick="downloadReportJson()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Descargar Reporte JSON
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+      <span id="progressStatusText" style="font-weight: 700; font-size: 0.95rem;">Procesando tickets...</span>
+      <span id="progressPercentText" style="font-weight: 700; color: var(--accent);">0%</span>
+    </div>
+    <div class="progress-bar-container">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+
+    <div style="display: flex; gap: 24px; margin-bottom: 16px; font-size: 0.9rem;">
+      <div>Total: <strong id="resTotal">0</strong></div>
+      <div style="color: #34d399;">Exitosos: <strong id="resSuccess">0</strong></div>
+      <div style="color: #f87171;">Fallidos: <strong id="resFail">0</strong></div>
+    </div>
+
+    <div class="log-console" id="logConsole">
+      <!-- Mensajes en vivo -->
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let jiraBaseUrl = "{{ jira_base_url }}".replace(/\/$/, "");
+  let metadata = { projects: [], statuses: [], organizations: [], org_field: "customfield_10002" };
+  let currentIssues = [];
+  let selectedKeys = new Set();
+  let lastExecutionReport = null;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadMetadata();
+    renderOperationParams();
+    toggleDryRunBadge();
+  });
+
+  async function loadMetadata() {
+    try {
+      const res = await fetch("/api/bulk/metadata");
+      if (res.ok) {
+        metadata = await res.json();
+        populateFilterDropdowns();
+        renderOperationParams();
+      }
+    } catch (err) {
+      console.error("Error al cargar metadatos:", err);
+    }
+  }
+
+  function populateFilterDropdowns() {
+    const selProject = document.getElementById("filterProject");
+    metadata.projects.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.key;
+      opt.textContent = `${p.key} - ${p.name}`;
+      selProject.appendChild(opt);
+    });
+
+    const selStatus = document.getElementById("filterStatus");
+    metadata.statuses.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.name;
+      opt.textContent = s.name;
+      selStatus.appendChild(opt);
+    });
+
+    const selOrg = document.getElementById("filterOrg");
+    metadata.organizations.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o.name;
+      opt.textContent = o.name;
+      selOrg.appendChild(opt);
+    });
+  }
+
+  function setSearchMode(mode) {
+    const isAssisted = mode === 'assisted';
+    document.getElementById("btnModeAssisted").classList.toggle("active", isAssisted);
+    document.getElementById("btnModeJql").classList.toggle("active", !isAssisted);
+    document.getElementById("assistedFilters").style.display = isAssisted ? "block" : "none";
+    document.getElementById("jqlFilters").style.display = isAssisted ? "none" : "block";
+  }
+
+  function setJqlExample(jql) {
+    document.getElementById("customJql").value = jql;
+  }
+
+  function renderOperationParams() {
+    const op = document.getElementById("operationSelect").value;
+    const container = document.getElementById("operationParamsContainer");
+    container.innerHTML = "";
+
+    if (op === "remove_org" || op === "add_org") {
+      const fieldDiv = document.createElement("div");
+      fieldDiv.className = "field";
+      fieldDiv.innerHTML = `
+        <label for="opOrgSelect">Seleccionar Organización</label>
+        <select id="opOrgSelect">
+          ${metadata.organizations.map(o => `<option value="${o.id}">${o.name} (ID: ${o.id})</option>`).join("")}
+        </select>
+        <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
+          ${op === 'remove_org' ? 'Se desvinculará esta organización de cada ticket seleccionado sin borrar el ticket.' : 'Se añadirá esta organización a los tickets.'}
+        </div>
+      `;
+      container.appendChild(fieldDiv);
+    } else if (op === "clear_orgs") {
+      container.innerHTML = `
+        <div style="padding: 12px; border-radius: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; font-size: 0.85rem;">
+          ⚠️ <strong>Atención:</strong> Esta acción vaciará completamente el campo de Organizaciones en todos los tickets seleccionados dejándolo en blanco.
+        </div>
+      `;
+    } else if (op === "add_label" || op === "remove_label") {
+      container.innerHTML = `
+        <div class="field">
+          <label for="opLabelInput">Nombre de la Etiqueta (Label)</label>
+          <input type="text" id="opLabelInput" placeholder="Ej: migracion, soporte-vip, auditoria">
+        </div>
+      `;
+    } else if (op === "clear_assignee") {
+      container.innerHTML = `
+        <div style="padding: 12px; border-radius: 10px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25); color: #7dd3fc; font-size: 0.85rem;">
+          ℹ️ Esta acción cambiará el responsable de los tickets seleccionados a <strong>Sin Asignar</strong>.
+        </div>
+      `;
+    } else if (op === "add_comment") {
+      container.innerHTML = `
+        <div class="field">
+          <label for="opCommentBody">Texto del Comentario</label>
+          <textarea id="opCommentBody" rows="3" placeholder="Escribe el comentario que se agregará a cada ticket..." style="resize: vertical;"></textarea>
+        </div>
+      `;
+    }
+  }
+
+  function toggleDryRunBadge() {
+    const isDry = document.getElementById("dryRunToggle").checked;
+    const title = document.getElementById("dryRunTitle");
+    const desc = document.getElementById("dryRunDesc");
+    const btnExecute = document.getElementById("btnExecute");
+
+    if (isDry) {
+      title.textContent = "Modo Simulación Activo (Dry-Run)";
+      title.style.color = "var(--warn)";
+      desc.textContent = "Los tickets no se modificarán en Jira. Probará con seguridad qué tickets se verían afectados.";
+      btnExecute.className = "";
+      btnExecute.style.background = "linear-gradient(135deg, var(--warn), #f59e0b)";
+    } else {
+      title.textContent = "MODO REAL ACTIVO (Aplicará cambios en Jira)";
+      title.style.color = "var(--danger)";
+      desc.textContent = "Cuidado: Los cambios se guardarán directamente en los tickets de Jira mediante la API.";
+      btnExecute.className = "btn-danger";
+      btnExecute.style.background = "";
+    }
+    updateExecuteButtonText();
+  }
+
+  function updateExecuteButtonText() {
+    const isDry = document.getElementById("dryRunToggle").checked;
+    const count = selectedKeys.size;
+    const text = isDry 
+      ? `Simular en Tickets Seleccionados (${count})` 
+      : `Ejecutar Cambios Reales en Jira (${count})`;
+    document.getElementById("btnExecuteText").textContent = text;
+  }
+
+  async function previewTickets() {
+    const isAssisted = document.getElementById("btnModeAssisted").classList.contains("active");
+    const limit = parseInt(document.getElementById("previewLimit").value, 10);
+    const btnSearchText = document.getElementById("btnSearchText");
+
+    btnSearchText.textContent = "Buscando...";
+    document.getElementById("btnSearch").disabled = true;
+
+    const payload = { limit };
+    if (isAssisted) {
+      payload.project = document.getElementById("filterProject").value || null;
+      payload.status = document.getElementById("filterStatus").value || null;
+      payload.organization = document.getElementById("filterOrg").value || null;
+      payload.label = document.getElementById("filterLabel").value || null;
+      payload.search_text = document.getElementById("filterText").value || null;
+    } else {
+      payload.custom_jql = document.getElementById("customJql").value || null;
+    }
+
+    try {
+      const res = await fetch("/api/bulk/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Error al buscar tickets: " + (err.detail || res.statusText));
+        return;
+      }
+
+      const data = await res.json();
+      currentIssues = data.issues || [];
+      selectedKeys.clear();
+      
+      // Marcar todos por defecto
+      currentIssues.forEach(iss => selectedKeys.add(iss.key));
+
+      document.getElementById("jqlExecutedBadge").textContent = "JQL: " + data.jql;
+      document.getElementById("selectionCounter").textContent = `(${currentIssues.length} encontrados, ${selectedKeys.size} seleccionados)`;
+      document.getElementById("thSelectAll").checked = currentIssues.length > 0;
+
+      renderTable();
+      updateExecuteButtonText();
+
+    } catch (err) {
+      console.error(err);
+      alert("Error de red al consultar tickets: " + err.message);
+    } finally {
+      btnSearchText.textContent = "Buscar Tickets";
+      document.getElementById("btnSearch").disabled = false;
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("ticketsTableBody");
+    tbody.innerHTML = "";
+
+    if (currentIssues.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <div style="font-weight: 600; font-size: 1rem; color: var(--text);">No se encontraron tickets</div>
+              <div style="font-size: 0.85rem; margin-top: 4px;">Intenta ajustar los criterios de búsqueda o JQL.</div>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    currentIssues.forEach(iss => {
+      const isChecked = selectedKeys.has(iss.key);
+      const tr = document.createElement("tr");
+      if (isChecked) tr.classList.add("selected");
+      tr.id = `row-${iss.key}`;
+
+      const orgsHtml = (iss.organizations && iss.organizations.length > 0)
+        ? iss.organizations.map(o => `<span class="org-tag">${o}</span>`).join(" ")
+        : '<span style="color: var(--muted); font-size: 0.8rem;">Ninguna</span>';
+
+      const labelsHtml = (iss.labels && iss.labels.length > 0)
+        ? iss.labels.map(l => `<span style="font-size: 0.75rem; color: var(--muted); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">${l}</span>`).join(" ")
+        : '-';
+
+      tr.innerHTML = `
+        <td style="text-align: center;">
+          <input type="checkbox" class="ticket-checkbox" data-key="${iss.key}" ${isChecked ? 'checked' : ''} onchange="onRowCheckboxChange('${iss.key}', this.checked)">
+        </td>
+        <td>
+          <a href="${jiraBaseUrl ? `${jiraBaseUrl}/browse/${iss.key}` : '#'}" target="_blank" class="ticket-link">
+            ${iss.key}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
+        </td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${iss.summary}">
+          ${iss.summary}
+        </td>
+        <td>
+          <span class="status-badge">${iss.status}</span>
+        </td>
+        <td>${orgsHtml}</td>
+        <td style="color: var(--muted); font-size: 0.85rem;">${iss.assignee}</td>
+        <td>${labelsHtml}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function onRowCheckboxChange(key, checked) {
+    if (checked) {
+      selectedKeys.add(key);
+      document.getElementById(`row-${key}`)?.classList.add("selected");
+    } else {
+      selectedKeys.delete(key);
+      document.getElementById(`row-${key}`)?.classList.remove("selected");
+    }
+    document.getElementById("thSelectAll").checked = selectedKeys.size === currentIssues.length && currentIssues.length > 0;
+    document.getElementById("selectionCounter").textContent = `(${currentIssues.length} encontrados, ${selectedKeys.size} seleccionados)`;
+    updateExecuteButtonText();
+  }
+
+  function toggleSelectAll(selectAll) {
+    selectedKeys.clear();
+    const cbs = document.querySelectorAll(".ticket-checkbox");
+    cbs.forEach(cb => {
+      cb.checked = selectAll;
+      const key = cb.dataset.key;
+      const row = document.getElementById(`row-${key}`);
+      if (selectAll) {
+        selectedKeys.add(key);
+        row?.classList.add("selected");
+      } else {
+        row?.classList.remove("selected");
+      }
+    });
+    document.getElementById("thSelectAll").checked = selectAll;
+    document.getElementById("selectionCounter").textContent = `(${currentIssues.length} encontrados, ${selectedKeys.size} seleccionados)`;
+    updateExecuteButtonText();
+  }
+
+  function filterTableLocally() {
+    const filter = document.getElementById("tableFilterInput").value.toLowerCase().trim();
+    const rows = document.querySelectorAll("#ticketsTableBody tr");
+    rows.forEach(r => {
+      const text = r.textContent.toLowerCase();
+      r.style.display = text.includes(filter) ? "" : "none";
+    });
+  }
+
+  function resetAll() {
+    document.getElementById("filterProject").value = "";
+    document.getElementById("filterStatus").value = "";
+    document.getElementById("filterOrg").value = "";
+    document.getElementById("filterLabel").value = "";
+    document.getElementById("filterText").value = "";
+    document.getElementById("customJql").value = "";
+    document.getElementById("tableFilterInput").value = "";
+    currentIssues = [];
+    selectedKeys.clear();
+    document.getElementById("selectionCounter").textContent = "(0 encontrados)";
+    document.getElementById("jqlExecutedBadge").textContent = "";
+    renderTable();
+    updateExecuteButtonText();
+    document.getElementById("executionPanel").style.display = "none";
+  }
+
+  async function confirmAndExecute() {
+    if (selectedKeys.size === 0) {
+      alert("Debes seleccionar al menos un ticket de la lista para ejecutar la operación.");
+      return;
+    }
+
+    const op = document.getElementById("operationSelect").value;
+    const isDry = document.getElementById("dryRunToggle").checked;
+
+    // Obtener parámetros según operación
+    const params = {};
+    if (op === "remove_org" || op === "add_org") {
+      const sel = document.getElementById("opOrgSelect");
+      params.org_id = sel.value;
+      params.org_name = sel.options[sel.selectedIndex]?.text;
+    } else if (op === "add_label" || op === "remove_label") {
+      const lbl = document.getElementById("opLabelInput")?.value?.trim();
+      if (!lbl) {
+        alert("Por favor ingresa el nombre de la etiqueta.");
+        return;
+      }
+      params.label = lbl;
+    } else if (op === "add_comment") {
+      const cmt = document.getElementById("opCommentBody")?.value?.trim();
+      if (!cmt) {
+        alert("Por favor ingresa el texto del comentario.");
+        return;
+      }
+      params.body = cmt;
+    }
+
+    const promptMsg = isDry
+      ? `¿Deseas iniciar la SIMULACIÓN (Dry-Run) sobre ${selectedKeys.size} tickets? No se guardará nada en Jira.`
+      : `⚠️ ATENCIÓN: Vas a aplicar cambios REALES en Jira sobre ${selectedKeys.size} tickets.\n\n¿Estás seguro de que deseas continuar?`;
+
+    if (!confirm(promptMsg)) {
+      return;
+    }
+
+    // Mostrar panel de ejecución
+    const execPanel = document.getElementById("executionPanel");
+    execPanel.style.display = "block";
+    execPanel.scrollIntoView({ behavior: "smooth" });
+
+    const logConsole = document.getElementById("logConsole");
+    logConsole.innerHTML = "";
+    const progressFill = document.getElementById("progressFill");
+    const progressPercentText = document.getElementById("progressPercentText");
+    const progressStatusText = document.getElementById("progressStatusText");
+
+    progressFill.style.width = "0%";
+    progressPercentText.textContent = "0%";
+    progressStatusText.textContent = isDry ? "Ejecutando simulación..." : "Aplicando cambios en Jira...";
+
+    const keysArray = Array.from(selectedKeys);
+    document.getElementById("resTotal").textContent = keysArray.length;
+    document.getElementById("resSuccess").textContent = "0";
+    document.getElementById("resFail").textContent = "0";
+    document.getElementById("btnDownloadReport").style.display = "none";
+
+    let successCount = 0;
+    let failCount = 0;
+    const reportResults = [];
+
+    // Procesamos en lotes de 10 para dar feedback visual fluido y respetar límites
+    const batchSize = 10;
+    for (let i = 0; i < keysArray.length; i += batchSize) {
+      const batchKeys = keysArray.slice(i, i + batchSize);
+      
+      try {
+        const res = await fetch("/api/bulk/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            issue_keys: batchKeys,
+            operation: op,
+            params: params,
+            dry_run: isDry
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          batchKeys.forEach(k => {
+            appendLog(k, false, `Fallo en petición: ${err.detail || res.statusText}`, isDry);
+            failCount++;
+            reportResults.push({ key: k, success: false, message: err.detail });
+          });
+        } else {
+          const data = await res.json();
+          data.results.forEach(r => {
+            if (r.success) successCount++;
+            else failCount++;
+            reportResults.push(r);
+            appendLog(r.key, r.success, r.message, isDry);
+          });
+        }
+      } catch (err) {
+        batchKeys.forEach(k => {
+          appendLog(k, false, `Error de conexión: ${err.message}`, isDry);
+          failCount++;
+          reportResults.push({ key: k, success: false, message: err.message });
+        });
+      }
+
+      const processed = Math.min(i + batchSize, keysArray.length);
+      const pct = Math.round((processed / keysArray.length) * 100);
+      progressFill.style.width = `${pct}%`;
+      progressPercentText.textContent = `${pct}%`;
+      document.getElementById("resSuccess").textContent = successCount;
+      document.getElementById("resFail").textContent = failCount;
+    }
+
+    progressStatusText.textContent = isDry ? "Simulación Finalizada" : "Modificación Masiva Finalizada";
+    lastExecutionReport = {
+      timestamp: new Date().toISOString(),
+      dry_run: isDry,
+      operation: op,
+      params: params,
+      total: keysArray.length,
+      success_count: successCount,
+      fail_count: failCount,
+      results: reportResults
+    };
+    document.getElementById("btnDownloadReport").style.display = "inline-flex";
+
+    // Si fue real, refrescamos la tabla para ver los cambios
+    if (!isDry && successCount > 0) {
+      setTimeout(() => {
+        previewTickets();
+      }, 1500);
+    }
+  }
+
+  function appendLog(key, success, message, isDry) {
+    const logConsole = document.getElementById("logConsole");
+    const item = document.createElement("div");
+    item.className = `log-item ${isDry ? 'dryrun' : (success ? 'success' : 'error')}`;
+    const icon = isDry ? '🟡' : (success ? '✅' : '❌');
+    item.innerHTML = `<span>${icon}</span> <strong>${key}</strong>: <span>${message}</span>`;
+    logConsole.appendChild(item);
+    logConsole.scrollTop = logConsole.scrollHeight;
+  }
+
+  function downloadReportJson() {
+    if (!lastExecutionReport) return;
+    const blob = new Blob([JSON.stringify(lastExecutionReport, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reporte_bulk_jira_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+{% endblock %}
