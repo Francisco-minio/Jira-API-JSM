@@ -801,7 +801,170 @@
       font-size: 9pt;
       color: #475569;
     }
+    /* === MÓDULO 7: MAPA DE CALOR 7X24 === */
+  .heatmap-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 3px;
+    min-width: 900px;
   }
+  .heatmap-table th {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+  .heatmap-cell {
+    min-width: 32px;
+    height: 38px;
+    padding: 2px !important;
+    text-align: center;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: transform 0.15s ease, outline 0.15s ease;
+    user-select: none;
+  }
+  .heatmap-cell:hover {
+    outline: 2px solid #38bdf8;
+    transform: scale(1.14);
+    z-index: 10;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+  .heatmap-total-col {
+    background: rgba(14, 165, 233, 0.12) !important;
+    font-weight: 800;
+    color: #38bdf8;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+  .heatmap-gradient-bar {
+    width: 130px;
+    height: 9px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(14, 165, 233, 0.4), rgba(139, 92, 246, 0.7), #ef4444);
+  }
+
+  /* === MÓDULO 8: CLIENT HEALTH SCORE & HEAVY USERS === */
+  .health-score-val {
+    font-size: 1.35rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .health-badge.stable {
+    background: rgba(16, 185, 129, 0.16);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+  .health-badge.warning {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+  .health-badge.critical {
+    background: rgba(239, 68, 68, 0.16);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .friction-tag {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .friction-tag.alert {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+  }
+  .heavy-user-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    margin-bottom: 8px;
+    font-size: 0.84rem;
+    transition: background 0.15s ease;
+  }
+  .heavy-user-card:hover {
+    background: rgba(14, 165, 233, 0.08);
+  }
+
+  /* === MÓDULO 9: SKILL MATRIX === */
+  .skill-cell {
+    padding: 8px 6px !important;
+    text-align: center;
+    font-size: 0.78rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .skill-cell.specialist {
+    background: rgba(245, 158, 11, 0.14) !important;
+    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+  }
+  .specialist-star {
+    color: #fbbf24;
+    font-size: 0.88rem;
+    margin-left: 2px;
+  }
+  .skill-topic-card {
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* === MÓDULO 10: BOLSAS DE HORAS === */
+  .bag-bar-track {
+    position: relative;
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .bag-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.4s ease;
+  }
+  .bag-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #fff;
+    opacity: 0.8;
+    z-index: 2;
+  }
+}
 {% endblock %}
 
 {% block content %}
@@ -1056,6 +1219,22 @@
     <button type="button" class="bi-tab-btn" data-tab="tabSampling">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
       6. Muestreo de Auditoría (QA)
+    </button>
+    <button type="button" class="bi-tab-btn" data-tab="tabHeatmap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      7. Mapa de Calor 7x24
+    </button>
+    <button type="button" class="bi-tab-btn" data-tab="tabClientHealth">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+      8. Salud de Clientes & Fricción
+    </button>
+    <button type="button" class="bi-tab-btn" data-tab="tabSkillMatrix">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+      9. Skill Matrix & Especialistas
+    </button>
+    <button type="button" class="bi-tab-btn" data-tab="tabContractBags">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+      10. Bolsas de Horas & Contratos
     </button>
   </nav>
 
@@ -1710,6 +1889,358 @@
         </div>
       </section>
     </div>
+  </div>
+
+  <!-- ==================== TAB 7: MAPA DE CALOR 7X24 (DEMANDA VS IMPUTACIÓN) ==================== -->
+  <div id="tabHeatmap" class="bi-tab-pane">
+    <section class="panel bi-card" style="margin-bottom: 20px;">
+      <div class="bi-card-head">
+        <div>
+          <h3 id="heatmapTitle">Mapa de Calor 7x24: Demanda Entrante vs Imputación de Trabajo</h3>
+          <div class="bi-card-sub">Matriz de los 7 días de la semana por 24 horas del día (00:00 a 23:00) para detectar horas punta, descalce de capacidad y trabajo nocturno o en fines de semana.</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <div class="chart-toggle-group">
+            <button type="button" id="btnHeatmapDemand" class="chart-toggle-btn active" data-metric="demand">🎫 Tickets Creados (Demanda)</button>
+            <button type="button" id="btnHeatmapCapacity" class="chart-toggle-btn" data-metric="capacity">⏱️ Horas Imputadas (Trabajo)</button>
+          </div>
+          <select id="heatmapDemandFilter" style="padding: 6px 12px; font-size: 0.82rem; border-radius: 10px;">
+            <option value="all" selected>Toda la Demanda</option>
+            <option value="incidents">Solo Incidencias</option>
+            <option value="requests">Solo Requerimientos</option>
+          </select>
+          <button type="button" id="exportHeatmapCsvBtn" class="btn-bi" style="padding: 6px 12px; font-size: 0.8rem;">📥 Exportar Heatmap CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS HEATMAP -->
+      <section class="bi-kpi-grid" aria-label="KPIs del Mapa de Calor" style="margin-bottom: 18px;">
+        <div class="bi-kpi-card" style="--kpi-color: #38bdf8;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Hora Punta (Peak Hour)</span>
+            <span id="heatmapPeakHourBadge" class="bi-kpi-delta neutral">Pico</span>
+          </div>
+          <div class="bi-kpi-value" id="heatmapPeakHourVal">-</div>
+          <div class="bi-kpi-sub">
+            <span id="heatmapPeakHourSub">0 tickets registrados</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #a78bfa;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Día de Mayor Carga</span>
+            <span id="heatmapPeakDayBadge" class="bi-kpi-delta neutral">Carga</span>
+          </div>
+          <div class="bi-kpi-value" id="heatmapPeakDayVal">-</div>
+          <div class="bi-kpi-sub">
+            <span id="heatmapPeakDaySub">0 tickets totales</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #f59e0b;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Actividad Fuera de Horario</span>
+            <span id="heatmapOffHoursBadge" class="bi-kpi-delta neutral">0%</span>
+          </div>
+          <div class="bi-kpi-value" id="heatmapOffHoursVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Noches (antes 08h / tras 19h) y Fines de Semana</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #10b981;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Descalce Demanda vs Trabajo</span>
+            <span id="heatmapMismatchBadge" class="bi-kpi-delta neutral">Alineación</span>
+          </div>
+          <div class="bi-kpi-value" id="heatmapMismatchVal" style="font-size: 1.15rem;">-</div>
+          <div class="bi-kpi-sub">
+            <span id="heatmapMismatchSub">Comparación pico de entrada vs pico de atención</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA HEATMAP 7X24 (modern-web-guidance: responsive-table) -->
+      <div tabindex="0" role="region" aria-labelledby="heatmapTitle" class="table-wrapper">
+        <table id="heatmapTable" class="heatmap-table">
+          <thead id="heatmapThead"></thead>
+          <tbody id="heatmapTbody"></tbody>
+          <tfoot id="heatmapTfoot"></tfoot>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
+        <div class="heatmap-legend">
+          <span>Intensidad: 0</span>
+          <div class="heatmap-gradient-bar"></div>
+          <span>Máximo</span>
+        </div>
+        <div class="click-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Haz clic en cualquier celda para filtrar el detalle de tickets de ese día y hora.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== TAB 8: SALUD DE CLIENTES & HEAVY USERS ==================== -->
+  <div id="tabClientHealth" class="bi-tab-pane">
+    <section class="panel bi-card" style="margin-bottom: 20px;">
+      <div class="bi-card-head">
+        <div>
+          <h3 id="clientHealthTitle">Health Score del Cliente & Análisis de Fricción Operacional</h3>
+          <div class="bi-card-sub">Índice ponderado (0-100) por cliente que sintetiza reaberturas, % de incidencias, MTTR relativo, brecha de cierre y tickets zombies, junto a la detección de solicitantes recurrentes (Heavy Users).</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <input type="search" id="clientHealthSearch" placeholder="Buscar cliente..." style="padding: 6px 12px; font-size: 0.82rem; border-radius: 10px; min-width: 200px;">
+          <button type="button" id="exportClientHealthCsvBtn" class="btn-bi" style="padding: 6px 12px; font-size: 0.8rem;">📥 Exportar Salud CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS HEALTH SCORE -->
+      <section class="bi-kpi-grid" aria-label="KPIs de Salud de Clientes" style="margin-bottom: 18px;">
+        <div class="bi-kpi-card" style="--kpi-color: #10b981;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Índice Salud Global Promedio</span>
+            <span id="healthAvgBadge" class="bi-kpi-delta neutral">Salud</span>
+          </div>
+          <div class="bi-kpi-value" id="healthAvgVal">100 / 100</div>
+          <div class="bi-kpi-sub">
+            <span id="healthAvgSub">Promedio ponderado entre cuentas</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #ef4444;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Clientes en Estado Crítico (&lt;60)</span>
+            <span id="healthCriticalBadge" class="bi-kpi-delta negative">0 cuentas</span>
+          </div>
+          <div class="bi-kpi-value" id="healthCriticalVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Alta fricción, reaberturas o demoras</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #f59e0b;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Clientes en Alerta (60-79)</span>
+            <span id="healthWarningBadge" class="bi-kpi-delta warning">0 cuentas</span>
+          </div>
+          <div class="bi-kpi-value" id="healthWarningVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Fricción moderada o MTTR extendido</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #38bdf8;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Concentración Heavy Users</span>
+            <span id="healthParetoBadge" class="bi-kpi-delta neutral">Pareto</span>
+          </div>
+          <div class="bi-kpi-value" id="healthParetoVal">0%</div>
+          <div class="bi-kpi-sub">
+            <span id="healthParetoSub">Demanda concentrada en Top informadores</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="bi-grid-2">
+        <!-- TABLA PRINCIPAL DE HEALTH SCORE POR CLIENTE (modern-web-guidance: responsive-table) -->
+        <div tabindex="0" role="region" aria-labelledby="clientHealthTitle" class="table-wrapper">
+          <table class="responsive-stack" style="--label-2: 'Cliente'; --label-3: 'Health Score'; --label-4: 'Fricción'; --label-5: 'Tickets/Horas'; --label-6: '% Incidencias'; --label-7: 'Reabertura'; --label-8: 'MTTR'; --label-9: 'Top Informador'; --label-10: 'Acción';">
+            <thead>
+              <tr>
+                <th>Cliente / Empresa</th>
+                <th>Health Score</th>
+                <th>Factores de Fricción</th>
+                <th>Volumen</th>
+                <th>% Incidencias</th>
+                <th>Reabertura</th>
+                <th>MTTR Prom.</th>
+                <th>Top Heavy User</th>
+                <th>Filtrar</th>
+              </tr>
+            </thead>
+            <tbody id="clientHealthTbody"></tbody>
+          </table>
+        </div>
+
+        <!-- PANEL LATERAL: PARETO GLOBAL DE HEAVY USERS -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="padding: 16px; border-radius: 14px; background: rgba(15, 23, 42, 0.55); border: 1px solid var(--panel-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <h4 style="margin: 0; font-size: 0.96rem;">👤 Top Heavy Users (Pareto de Informadores)</h4>
+              <span class="badge badge-l12" id="heavyUsersTotalBadge">Top 10</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
+              Informadores que generan la mayor cantidad de requerimientos al Helpdesk.
+            </div>
+            <div id="heavyUsersList" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== TAB 9: SKILL MATRIX (ESPECIALIZACIÓN TÉCNICA) ==================== -->
+  <div id="tabSkillMatrix" class="bi-tab-pane">
+    <section class="panel bi-card" style="margin-bottom: 20px;">
+      <div class="bi-card-head">
+        <div>
+          <h3 id="skillMatrixTitle">Skill Matrix: Matriz de Especialización Técnica por Agente</h3>
+          <div class="bi-card-sub">Cruce de Técnicos vs Temáticas de Soporte (Hardware, ERP, Redes, Correo/M365, etc.) para identificar especialistas principales (⭐ Top Performers), respaldos de conocimiento y temáticas con riesgo de desatención.</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button type="button" id="exportSkillMatrixCsvBtn" class="btn-bi" style="padding: 6px 12px; font-size: 0.8rem;">📥 Exportar Skill Matrix CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS SKILL MATRIX -->
+      <section class="bi-kpi-grid" aria-label="KPIs de Skill Matrix" style="margin-bottom: 18px;">
+        <div class="bi-kpi-card" style="--kpi-color: #38bdf8;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Temáticas Técnicas Evaluadas</span>
+            <span id="skillTopicsBadge" class="bi-kpi-delta neutral">Cobertura</span>
+          </div>
+          <div class="bi-kpi-value" id="skillTopicsVal">0</div>
+          <div class="bi-kpi-sub">
+            <span id="skillTopicsSub">Áreas de especialidad identificadas</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #10b981;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Especialistas ⭐ Asignados</span>
+            <span id="skillSpecialistsBadge" class="bi-kpi-delta positive">Líderes</span>
+          </div>
+          <div class="bi-kpi-value" id="skillSpecialistsVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Técnicos de alto rendimiento por área</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #f59e0b;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Riesgo Bus Factor = 1</span>
+            <span id="skillRiskBadge" class="bi-kpi-delta warning">0 áreas</span>
+          </div>
+          <div class="bi-kpi-value" id="skillRiskVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Temáticas con solo 1 técnico (sin backup)</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #a78bfa;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Área con Mayor Demanda</span>
+            <span id="skillTopDemandBadge" class="bi-kpi-delta neutral">Horas</span>
+          </div>
+          <div class="bi-kpi-value" id="skillTopDemandVal" style="font-size: 1.15rem;">-</div>
+          <div class="bi-kpi-sub">
+            <span id="skillTopDemandSub">Mayor absorción de horas de soporte</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA MATRIZ 2D: TÉCNICOS X TEMÁTICAS (modern-web-guidance: responsive-table) -->
+      <div tabindex="0" role="region" aria-labelledby="skillMatrixTitle" class="table-wrapper" style="margin-bottom: 20px;">
+        <table id="skillMatrixTable" class="heatmap-table">
+          <thead id="skillMatrixThead"></thead>
+          <tbody id="skillMatrixTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- CARDS POR TEMÁTICA: ESPECIALISTA PRINCIPAL Y RESPALDO -->
+      <h4 style="margin: 0 0 12px; font-size: 1rem; color: var(--text);">Especialistas Designados y Respaldo por Área Técnica</h4>
+      <div id="skillTopicCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px;"></div>
+    </section>
+  </div>
+
+  <!-- ==================== TAB 10: BOLSAS DE HORAS & CONTRATOS ==================== -->
+  <div id="tabContractBags" class="bi-tab-pane">
+    <section class="panel bi-card" style="margin-bottom: 20px;">
+      <div class="bi-card-head">
+        <div>
+          <h3 id="contractBagsTitle">Control de Bolsas de Horas & Consumo Contractual</h3>
+          <div class="bi-card-sub">Seguimiento en tiempo real de las bolsas de horas mensuales contratadas vs horas consumidas. Monitorea el ritmo de gasto (Burn Rate), detecta riesgo de sobreconsumo antes de fin de mes y estima la fecha de agotamiento.</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button type="button" id="exportContractBagsCsvBtn" class="btn-bi" style="padding: 6px 12px; font-size: 0.8rem;">📥 Exportar Bolsas CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS BOLSAS DE HORAS -->
+      <section class="bi-kpi-grid" aria-label="KPIs de Bolsas de Horas" style="margin-bottom: 18px;">
+        <div class="bi-kpi-card" style="--kpi-color: #38bdf8;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Horas Totales Contratadas</span>
+            <span id="bagTotalContractedBadge" class="bi-kpi-delta neutral">Cupo</span>
+          </div>
+          <div class="bi-kpi-value" id="bagTotalContractedVal">0 h</div>
+          <div class="bi-kpi-sub">
+            <span id="bagTotalContractedSub">Bolsa consolidada mensual</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #a78bfa;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Horas Consumidas a la Fecha</span>
+            <span id="bagTotalConsumedBadge" class="bi-kpi-delta neutral">Real</span>
+          </div>
+          <div class="bi-kpi-value" id="bagTotalConsumedVal">0 h</div>
+          <div class="bi-kpi-sub">
+            <span id="bagTotalConsumedSub">Imputación total en el periodo</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #f59e0b;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Burn Rate Consolidado</span>
+            <span id="bagBurnRateBadge" class="bi-kpi-delta neutral">Ritmo</span>
+          </div>
+          <div class="bi-kpi-value" id="bagBurnRateVal">0%</div>
+          <div class="bi-kpi-sub">
+            <span id="bagBurnRateSub">Consumo vs ritmo de días del mes</span>
+          </div>
+        </div>
+
+        <div class="bi-kpi-card" style="--kpi-color: #ef4444;">
+          <div class="bi-kpi-top">
+            <span class="bi-kpi-label">Cuentas en Riesgo / Sobreconsumo</span>
+            <span id="bagRiskCountBadge" class="bi-kpi-delta negative">0 cuentas</span>
+          </div>
+          <div class="bi-kpi-value" id="bagRiskCountVal">0</div>
+          <div class="bi-kpi-sub">
+            <span>Bolsas &gt;80% o &gt;100% agotadas</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA DETALLADA DE BOLSAS DE HORAS POR CLIENTE (modern-web-guidance: responsive-table) -->
+      <div tabindex="0" role="region" aria-labelledby="contractBagsTitle" class="table-wrapper">
+        <table class="responsive-stack" style="--label-2: 'Cliente'; --label-3: 'Bolsa Contratada'; --label-4: 'Horas Consumidas'; --label-5: 'Burn Rate'; --label-6: 'Proyección Fin Mes'; --label-7: 'Fecha Agotamiento'; --label-8: 'Estado'; --label-9: 'Acción';">
+          <thead>
+            <tr>
+              <th>Cliente / Cuenta</th>
+              <th>Bolsa Contratada (h)</th>
+              <th>Horas Consumidas</th>
+              <th>Burn Rate %</th>
+              <th>Proyección Fin de Mes</th>
+              <th>Fecha Est. Agotamiento</th>
+              <th>Estado / Semáforo</th>
+              <th>Filtrar</th>
+            </tr>
+          </thead>
+          <tbody id="contractBagsTbody"></tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 0.78rem; color: var(--muted);">
+          💡 <em>Puedes modificar el cupo contratado de cualquier cliente directamente en la tabla y presionar Guardar para actualizar su burn rate y proyección.</em>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- ==================== EXPLORADOR DRILL-DOWN DE TICKETS Y WORKLOGS ==================== -->
@@ -3877,6 +4408,10 @@
       renderAdvancedTab();
       renderPivotMatrix();
       renderVisitsAndWeeklyTab();
+      renderHeatmapTab();
+      renderClientHealthTab();
+      renderSkillMatrixTab();
+      renderContractBagsTab();
       renderDrilldownTable();
     }
 
@@ -4599,6 +5134,775 @@
         input.max = '1000';
       }
     });
+
+
+    // ==================== ESTADO Y LOGICA DE LAS 4 ANALITICAS AVANZADAS ====================
+    let heatmapMetricMode = 'demand'; // 'demand' | 'capacity'
+    let heatmapDemandFilter = 'all'; // 'all' | 'incidents' | 'requests'
+    let clientHealthSearch = '';
+    let contractBagOverrides = JSON.parse(localStorage.getItem('jira_bi_contract_bags') || '{}');
+
+    // 1. MAPA DE CALOR 7X24 (DEMANDA VS IMPUTACIÓN)
+    function renderHeatmapTab() {
+      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + 'h');
+      const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
+
+      const ticketsToAnalyze = filteredTickets.filter(t => {
+        if (heatmapDemandFilter === 'incidents') return t.is_incident;
+        if (heatmapDemandFilter === 'requests') return !t.is_incident;
+        return true;
+      });
+
+      if (heatmapMetricMode === 'demand') {
+        ticketsToAnalyze.forEach(t => {
+          if (!t.created_at) return;
+          const dt = new Date(t.created_at);
+          const dIdx = (dt.getDay() + 6) % 7; // 0=Mon..6=Sun
+          const h = dt.getHours();
+          if (dIdx >= 0 && dIdx < 7 && h >= 0 && h < 24) {
+            matrix[dIdx][h] += 1;
+          }
+        });
+      } else {
+        // Horas Imputadas
+        ticketsToAnalyze.forEach(t => {
+          (t.worklogs || []).forEach(w => {
+            if (!w.started_at) return;
+            const dt = new Date(w.started_at);
+            const dIdx = (dt.getDay() + 6) % 7;
+            const h = dt.getHours();
+            if (dIdx >= 0 && dIdx < 7 && h >= 0 && h < 24) {
+              matrix[dIdx][h] += Number(w.hours || 0);
+            }
+          });
+        });
+      }
+
+      const rowTotals = matrix.map(row => row.reduce((a, b) => a + b, 0));
+      const colTotals = Array.from({ length: 24 }, (_, h) => matrix.reduce((sum, row) => sum + row[h], 0));
+      const grandTotal = rowTotals.reduce((a, b) => a + b, 0);
+      const maxVal = Math.max(1, ...matrix.flat());
+
+      // KPIs
+      let peakHourIdx = 0;
+      let peakHourVal = -1;
+      colTotals.forEach((v, idx) => {
+        if (v > peakHourVal) { peakHourVal = v; peakHourIdx = idx; }
+      });
+
+      let peakDayIdx = 0;
+      let peakDayVal = -1;
+      rowTotals.forEach((v, idx) => {
+        if (v > peakDayVal) { peakDayVal = v; peakDayIdx = idx; }
+      });
+
+      let offHoursTotal = 0;
+      matrix.forEach((row, dIdx) => {
+        row.forEach((val, h) => {
+          const isWeekend = (dIdx === 5 || dIdx === 6);
+          const isOffTime = (h < 8 || h >= 19);
+          if (isWeekend || isOffTime) offHoursTotal += val;
+        });
+      });
+
+      const offHoursPct = grandTotal > 0 ? ((offHoursTotal / grandTotal) * 100).toFixed(1) : '0';
+      const unit = heatmapMetricMode === 'capacity' ? 'horas' : 'tickets';
+
+      const peakHourEl = document.getElementById('heatmapPeakHourVal');
+      if (peakHourEl) peakHourEl.textContent = `${hours[peakHourIdx]}:00`;
+      const peakHourSub = document.getElementById('heatmapPeakHourSub');
+      if (peakHourSub) peakHourSub.textContent = `${peakHourVal.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)} ${unit} (${grandTotal > 0 ? ((peakHourVal / grandTotal) * 100).toFixed(1) : 0}% del volumen)`;
+
+      const peakDayEl = document.getElementById('heatmapPeakDayVal');
+      if (peakDayEl) peakDayEl.textContent = days[peakDayIdx];
+      const peakDaySub = document.getElementById('heatmapPeakDaySub');
+      if (peakDaySub) peakDaySub.textContent = `${peakDayVal.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)} ${unit} (${grandTotal > 0 ? ((peakDayVal / grandTotal) * 100).toFixed(1) : 0}% del volumen)`;
+
+      const offHoursEl = document.getElementById('heatmapOffHoursVal');
+      if (offHoursEl) offHoursEl.textContent = `${offHoursTotal.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)} ${unit}`;
+      const offHoursBadge = document.getElementById('heatmapOffHoursBadge');
+      if (offHoursBadge) {
+        offHoursBadge.textContent = `${offHoursPct}%`;
+        offHoursBadge.className = `bi-kpi-delta ${Number(offHoursPct) > 20 ? 'negative' : (Number(offHoursPct) > 10 ? 'warning' : 'neutral')}`;
+      }
+
+      const mismatchEl = document.getElementById('heatmapMismatchVal');
+      if (mismatchEl) mismatchEl.textContent = `${(100 - Number(offHoursPct)).toFixed(1)}% Hábil / ${offHoursPct}% After-Hours`;
+      const mismatchSub = document.getElementById('heatmapMismatchSub');
+      if (mismatchSub) mismatchSub.textContent = `Pico máximo a las ${hours[peakHourIdx]}:00 en día ${days[peakDayIdx]}`;
+
+      // Render Matrix Table
+      const thead = document.getElementById('heatmapThead');
+      if (thead) {
+        thead.innerHTML = `
+          <tr>
+            <th style="min-width: 90px; text-align: left; padding-left: 10px;">Día / Hora</th>
+            ${hours.map(h => `<th>${h}</th>`).join('')}
+            <th>Total Día</th>
+          </tr>
+        `;
+      }
+
+      const tbody = document.getElementById('heatmapTbody');
+      if (tbody) {
+        tbody.innerHTML = days.map((dayName, dIdx) => {
+          const cells = matrix[dIdx].map((val, h) => {
+            const ratio = val / maxVal;
+            let bg = 'rgba(255, 255, 255, 0.02)';
+            let color = 'rgba(255, 255, 255, 0.25)';
+            if (val > 0) {
+              if (ratio <= 0.25) {
+                bg = `rgba(14, 165, 233, ${0.15 + ratio * 0.4})`;
+                color = '#bae6fd';
+              } else if (ratio <= 0.6) {
+                bg = `rgba(139, 92, 246, ${0.25 + ratio * 0.45})`;
+                color = '#ede9fe';
+              } else if (ratio <= 0.85) {
+                bg = `rgba(245, 158, 11, ${0.35 + ratio * 0.45})`;
+                color = '#fef3c7';
+              } else {
+                bg = `rgba(239, 68, 68, ${0.5 + ratio * 0.45})`;
+                color = '#ffffff';
+              }
+            }
+            const displayVal = val > 0 ? (heatmapMetricMode === 'capacity' ? val.toFixed(1) : val) : '·';
+            return `<td class="heatmap-cell" style="background: ${bg}; color: ${color};" title="${dayName} ${hours[h]}: ${val.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)} ${unit}" data-day="${dIdx}" data-hour="${h}">${displayVal}</td>`;
+          }).join('');
+
+          const dayTotalDisplay = rowTotals[dIdx].toFixed(heatmapMetricMode === 'capacity' ? 1 : 0);
+          return `
+            <tr>
+              <th style="font-size: 0.82rem; padding-left: 10px;">${dayName}</th>
+              ${cells}
+              <td class="heatmap-total-col">${dayTotalDisplay}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const tfoot = document.getElementById('heatmapTfoot');
+      if (tfoot) {
+        tfoot.innerHTML = `
+          <tr>
+            <th style="padding-left: 10px;">Total Hora</th>
+            ${colTotals.map(v => `<th>${v.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)}</th>`).join('')}
+            <th class="heatmap-total-col" style="font-size: 0.86rem; color: #fff;">${grandTotal.toFixed(heatmapMetricMode === 'capacity' ? 1 : 0)}</th>
+          </tr>
+        `;
+      }
+    }
+
+    // 2. HEALTH SCORE DEL CLIENTE & HEAVY USERS
+    function renderClientHealthTab() {
+      const clientMap = {};
+      const globalReporters = {};
+
+      filteredTickets.forEach(t => {
+        const cl = t.client || t.organization || 'Sin cliente';
+        if (!clientMap[cl]) {
+          clientMap[cl] = {
+            totalTkts: 0,
+            totalHrs: 0,
+            resolvedTkts: 0,
+            incidents: 0,
+            reopenedTkts: 0,
+            fcrTkts: 0,
+            zombies: 0,
+            orphans: 0,
+            closeGaps: [],
+            mttrList: [],
+            reporters: {}
+          };
+        }
+        const st = clientMap[cl];
+        st.totalTkts += 1;
+        st.totalHrs += (t.hours_logged || 0);
+        if (t.is_resolved) st.resolvedTkts += 1;
+        if (t.is_incident) st.incidents += 1;
+        if (t.is_reopened) st.reopenedTkts += 1;
+        if (t.is_fcr) st.fcrTkts += 1;
+        if (t.is_zombie) st.zombies += 1;
+        if (t.is_orphan_resolved) st.orphans += 1;
+        if (t.resolution_hours !== null && t.resolution_hours !== undefined) st.mttrList.push(t.resolution_hours);
+        if (t.close_gap_hours !== null && t.close_gap_hours !== undefined) st.closeGaps.push(t.close_gap_hours);
+
+        const rep = t.reporter || 'Sin informador';
+        if (rep !== 'Sin informador') {
+          st.reporters[rep] = (st.reporters[rep] || 0) + 1;
+          if (!globalReporters[rep]) globalReporters[rep] = { count: 0, client: cl, topicMap: {} };
+          globalReporters[rep].count += 1;
+          const top = t.topic || 'General';
+          globalReporters[rep].topicMap[top] = (globalReporters[rep].topicMap[top] || 0) + 1;
+        }
+      });
+
+      // Calculate Scores
+      const clientList = Object.entries(clientMap).map(([clientName, d]) => {
+        const total = d.totalTkts || 1;
+        const resolved = Math.max(d.resolvedTkts, 1);
+        const incidentPct = (d.incidents / total) * 100;
+        const reopenRate = (d.reopenedTkts / resolved) * 100;
+        const fcrPct = (d.fcrTkts / resolved) * 100;
+        const avgMttr = d.mttrList.length ? (d.mttrList.reduce((a, b) => a + b, 0) / d.mttrList.length) : 0;
+        const avgCloseGap = d.closeGaps.length ? (d.closeGaps.reduce((a, b) => a + b, 0) / d.closeGaps.length) : 0;
+
+        let reopenPen = Math.min(25, (reopenRate / 10) * 25);
+        let incPen = incidentPct > 30 ? Math.min(20, ((incidentPct - 30) / 40) * 20) : 0;
+        let mttrPen = avgMttr > 48 ? Math.min(20, ((avgMttr - 48) / 96) * 20) : 0;
+        let gapPen = avgCloseGap > 48 ? Math.min(15, ((avgCloseGap - 48) / 96) * 15) : 0;
+        let zombiePen = Math.min(20, d.zombies * 5);
+        let orphanPen = Math.min(10, d.orphans * 2.5);
+        let fcrBonus = (fcrPct > 65) ? 5 : 0;
+
+        let score = Math.max(0, Math.min(100, Math.round(100 - (reopenPen + incPen + mttrPen + gapPen + zombiePen + orphanPen) + fcrBonus)));
+
+        let statusClass = 'stable';
+        let statusLabel = 'Estable';
+        let statusIcon = '🟢';
+        if (score < 60) {
+          statusClass = 'critical';
+          statusLabel = 'Crítico';
+          statusIcon = '🔴';
+        } else if (score < 80) {
+          statusClass = 'warning';
+          statusLabel = 'Alerta';
+          statusIcon = '🟡';
+        }
+
+        const repEntries = Object.entries(d.reporters).sort((a, b) => b[1] - a[1]);
+        const topReporter = repEntries.length ? { name: repEntries[0][0], count: repEntries[0][1], pct: ((repEntries[0][1] / total) * 100).toFixed(0) } : { name: '-', count: 0, pct: '0' };
+
+        const frictionTags = [];
+        if (reopenRate > 10) frictionTags.push({ text: `Reabertura ${reopenRate.toFixed(1)}%`, alert: true });
+        if (incidentPct > 40) frictionTags.push({ text: `Incidencias ${incidentPct.toFixed(0)}%`, alert: true });
+        if (d.zombies > 0) frictionTags.push({ text: `Zombies: ${d.zombies}`, alert: true });
+        if (avgMttr > 72) frictionTags.push({ text: `MTTR ${avgMttr.toFixed(0)}h`, alert: true });
+        if (d.orphans > 0) frictionTags.push({ text: `0h Logged: ${d.orphans}`, alert: false });
+        if (!frictionTags.length) frictionTags.push({ text: `Operación Estable`, alert: false });
+
+        return {
+          client: clientName,
+          score,
+          statusClass,
+          statusLabel,
+          statusIcon,
+          totalTkts: d.totalTkts,
+          totalHrs: d.totalHrs,
+          incidentPct: incidentPct.toFixed(1),
+          reopenRate: reopenRate.toFixed(1),
+          fcrPct: fcrPct.toFixed(1),
+          avgMttr: avgMttr.toFixed(1),
+          zombies: d.zombies,
+          topReporter,
+          frictionTags
+        };
+      });
+
+      // Filter and Sort
+      const search = (clientHealthSearch || '').toLowerCase();
+      const filteredClients = clientList.filter(c => c.client.toLowerCase().includes(search));
+      filteredClients.sort((a, b) => a.score - b.score); // Criticos primero
+
+      // KPI Summaries
+      const totalAccounts = clientList.length || 1;
+      const criticalCount = clientList.filter(c => c.score < 60).length;
+      const warningCount = clientList.filter(c => c.score >= 60 && c.score < 80).length;
+      const avgScore = Math.round(clientList.reduce((acc, c) => acc + c.score, 0) / totalAccounts);
+
+      const healthAvgEl = document.getElementById('healthAvgVal');
+      if (healthAvgEl) healthAvgEl.textContent = `${avgScore} / 100`;
+      const healthAvgBadge = document.getElementById('healthAvgBadge');
+      if (healthAvgBadge) {
+        healthAvgBadge.textContent = avgScore >= 80 ? '🟢 Saludable' : (avgScore >= 60 ? '🟡 Alerta' : '🔴 Crítico');
+        healthAvgBadge.className = `bi-kpi-delta ${avgScore >= 80 ? 'positive' : (avgScore >= 60 ? 'warning' : 'negative')}`;
+      }
+
+      const critEl = document.getElementById('healthCriticalVal');
+      if (critEl) critEl.textContent = criticalCount;
+      const critBadge = document.getElementById('healthCriticalBadge');
+      if (critBadge) critBadge.textContent = `${((criticalCount / totalAccounts) * 100).toFixed(0)}% de cuentas`;
+
+      const warnEl = document.getElementById('healthWarningVal');
+      if (warnEl) warnEl.textContent = warningCount;
+      const warnBadge = document.getElementById('healthWarningBadge');
+      if (warnBadge) warnBadge.textContent = `${((warningCount / totalAccounts) * 100).toFixed(0)}% de cuentas`;
+
+      // Pareto Global Reporters
+      const sortedReporters = Object.entries(globalReporters).map(([name, data]) => {
+        const topTopic = Object.entries(data.topicMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
+        return { name, count: data.count, client: data.client, topTopic };
+      }).sort((a, b) => b.count - a.count);
+
+      const top10Reporters = sortedReporters.slice(0, 10);
+      const top10Sum = top10Reporters.reduce((sum, r) => sum + r.count, 0);
+      const grandTotalTickets = filteredTickets.length || 1;
+      const paretoPct = ((top10Sum / grandTotalTickets) * 100).toFixed(1);
+
+      const paretoValEl = document.getElementById('healthParetoVal');
+      if (paretoValEl) paretoValEl.textContent = `${paretoPct}%`;
+      const paretoSubEl = document.getElementById('healthParetoSub');
+      if (paretoSubEl) paretoSubEl.textContent = `${top10Sum} tickets en Top 10 informadores`;
+
+      // Render Heavy Users List
+      const heavyUsersContainer = document.getElementById('heavyUsersList');
+      if (heavyUsersContainer) {
+        heavyUsersContainer.innerHTML = top10Reporters.map((r, idx) => `
+          <div class="heavy-user-card">
+            <div>
+              <div style="font-weight: 700; color: var(--text);">${idx + 1}. ${escapeHtml(r.name)}</div>
+              <div style="font-size: 0.76rem; color: var(--muted);">${escapeHtml(r.client)} · <span style="color: #38bdf8;">${escapeHtml(r.topTopic)}</span></div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-l12">${r.count} tkts</span>
+              <div style="font-size: 0.72rem; color: var(--muted);">${((r.count / grandTotalTickets) * 100).toFixed(1)}% total</div>
+            </div>
+          </div>
+        `).join('') || '<div style="color: var(--muted); font-size: 0.84rem;">No hay informadores registrados.</div>';
+      }
+
+      // Render Client Health Table
+      const tbody = document.getElementById('clientHealthTbody');
+      if (tbody) {
+        tbody.innerHTML = filteredClients.map(c => `
+          <tr>
+            <td><strong>${escapeHtml(c.client)}</strong></td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="health-score-val" style="color: ${c.score >= 80 ? '#34d399' : (c.score >= 60 ? '#fbbf24' : '#f87171')};">${c.score}</span>
+                <span class="health-badge ${c.statusClass}">${c.statusIcon} ${c.statusLabel}</span>
+              </div>
+            </td>
+            <td>
+              ${c.frictionTags.map(t => `<span class="friction-tag ${t.alert ? 'alert' : ''}">${escapeHtml(t.text)}</span>`).join('')}
+            </td>
+            <td>${c.totalTkts} tkts / ${c.totalHrs.toFixed(1)}h</td>
+            <td>${c.incidentPct}%</td>
+            <td>${c.reopenRate}%</td>
+            <td>${c.avgMttr}h</td>
+            <td>
+              <div style="font-weight: 600;">${escapeHtml(c.topReporter.name)}</div>
+              <div style="font-size: 0.75rem; color: var(--muted);">${c.topReporter.count} tkts (${c.topReporter.pct}%)</div>
+            </td>
+            <td>
+              <button type="button" class="btn-bi" style="padding: 4px 10px; font-size: 0.75rem;" onclick="filterByClientName('${escapeHtml(c.client)}')">Filtrar</button>
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="9" style="text-align: center; color: var(--muted);">No se encontraron clientes con los filtros aplicados.</td></tr>';
+      }
+    }
+
+    // 3. SKILL MATRIX POR AGENTE (ESPECIALIZACIÓN TÉCNICA)
+    function renderSkillMatrixTab() {
+      const topicAgentMap = {};
+      const agentTotals = {};
+      const topicTotals = {};
+
+      filteredTickets.forEach(t => {
+        const top = t.topic || 'Sin Clasificar';
+        const ag = t.agent || 'Sin Asignar';
+        const hrs = t.hours_logged || 0;
+        const mttr = t.resolution_hours;
+
+        if (!topicAgentMap[top]) topicAgentMap[top] = {};
+        if (!topicAgentMap[top][ag]) topicAgentMap[top][ag] = { tickets: 0, hours: 0, fcr: 0, mttrList: [] };
+
+        const cell = topicAgentMap[top][ag];
+        cell.tickets += 1;
+        cell.hours += hrs;
+        if (t.is_fcr) cell.fcr += 1;
+        if (mttr !== null && mttr !== undefined) cell.mttrList.push(mttr);
+
+        if (!agentTotals[ag]) agentTotals[ag] = { tickets: 0, hours: 0 };
+        agentTotals[ag].tickets += 1;
+        agentTotals[ag].hours += hrs;
+
+        if (!topicTotals[top]) topicTotals[top] = { tickets: 0, hours: 0, mttrList: [] };
+        topicTotals[top].tickets += 1;
+        topicTotals[top].hours += hrs;
+        if (mttr !== null && mttr !== undefined) topicTotals[top].mttrList.push(mttr);
+      });
+
+      const topics = Object.keys(topicTotals).sort((a, b) => topicTotals[b].hours - topicTotals[a].hours);
+      const agents = Object.keys(agentTotals).filter(a => a !== 'Sin Asignar').sort((a, b) => agentTotals[b].hours - agentTotals[a].hours);
+
+      // Determine Specialists per Topic
+      const topicSpecialists = {};
+      let riskTopicsCount = 0;
+
+      topics.forEach(top => {
+        const agMap = topicAgentMap[top] || {};
+        const ranked = Object.entries(agMap)
+          .filter(([ag]) => ag !== 'Sin Asignar')
+          .map(([ag, st]) => {
+            const avgM = st.mttrList.length ? (st.mttrList.reduce((a, b) => a + b, 0) / st.mttrList.length) : 0;
+            const score = (st.tickets * 2.0) + st.hours + (st.fcr * 1.5) - (avgM * 0.05);
+            return { agent: ag, score, tickets: st.tickets, hours: st.hours, avgMttr: avgM, fcrPct: ((st.fcr / Math.max(st.tickets, 1)) * 100).toFixed(0) };
+          })
+          .sort((a, b) => b.score - a.score);
+
+        if (ranked.length > 0) {
+          const leader = ranked[0];
+          const backup = ranked.length > 1 ? ranked[1] : null;
+          if (!backup) riskTopicsCount += 1;
+          topicSpecialists[top] = { leader, backup, hasBackup: !!backup };
+        }
+      });
+
+      // KPIs
+      const skillTopicsEl = document.getElementById('skillTopicsVal');
+      if (skillTopicsEl) skillTopicsEl.textContent = topics.length;
+
+      const skillSpecEl = document.getElementById('skillSpecialistsVal');
+      if (skillSpecEl) skillSpecEl.textContent = Object.keys(topicSpecialists).length;
+
+      const riskEl = document.getElementById('skillRiskVal');
+      if (riskEl) riskEl.textContent = riskTopicsCount;
+      const riskBadge = document.getElementById('skillRiskBadge');
+      if (riskBadge) {
+        riskBadge.textContent = `${riskTopicsCount} áreas sin backup`;
+        riskBadge.className = `bi-kpi-delta ${riskTopicsCount > 0 ? 'warning' : 'positive'}`;
+      }
+
+      const topDemandTopic = topics[0] || '-';
+      const topDemandEl = document.getElementById('skillTopDemandVal');
+      if (topDemandEl) topDemandEl.textContent = topDemandTopic;
+      const topDemandSub = document.getElementById('skillTopDemandSub');
+      if (topDemandSub && topics.length > 0) {
+        topDemandSub.textContent = `${(topicTotals[topDemandTopic]?.hours || 0).toFixed(1)} horas imputadas (${topicTotals[topDemandTopic]?.tickets || 0} tkts)`;
+      }
+
+      // Render Matrix Table
+      const thead = document.getElementById('skillMatrixThead');
+      if (thead) {
+        thead.innerHTML = `
+          <tr>
+            <th style="text-align: left; padding-left: 10px; min-width: 160px;">Técnico / Especialista</th>
+            ${topics.map(t => `<th title="${escapeHtml(t)}">${escapeHtml(t.length > 18 ? t.slice(0, 16) + '...' : t)}</th>`).join('')}
+            <th>Total Agente</th>
+          </tr>
+        `;
+      }
+
+      const tbody = document.getElementById('skillMatrixTbody');
+      if (tbody) {
+        tbody.innerHTML = agents.map(ag => {
+          const cells = topics.map(top => {
+            const cell = topicAgentMap[top]?.[ag];
+            if (!cell || cell.hours === 0) {
+              return `<td class="skill-cell" style="color: rgba(255,255,255,0.2);">·</td>`;
+            }
+            const isSpecialist = topicSpecialists[top]?.leader?.agent === ag;
+            const avgM = cell.mttrList.length ? (cell.mttrList.reduce((a, b) => a + b, 0) / cell.mttrList.length).toFixed(0) : '-';
+            return `
+              <td class="skill-cell ${isSpecialist ? 'specialist' : ''}" title="${ag} en ${top}: ${cell.hours.toFixed(1)}h, ${cell.tickets} tkts, MTTR: ${avgM}h">
+                <div style="font-weight: 700; color: ${isSpecialist ? '#fbbf24' : '#fff'};">
+                  ${cell.hours.toFixed(1)}h ${isSpecialist ? '<span class="specialist-star">⭐</span>' : ''}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--muted);">${cell.tickets} tkts · ${avgM}h</div>
+              </td>
+            `;
+          }).join('');
+
+          const tot = agentTotals[ag] || { tickets: 0, hours: 0 };
+          return `
+            <tr>
+              <th style="text-align: left; padding-left: 10px;">${escapeHtml(ag)}</th>
+              ${cells}
+              <td class="heatmap-total-col">${tot.hours.toFixed(1)}h (${tot.tickets} tkts)</td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="10" style="text-align: center; color: var(--muted);">No hay registros de especialización disponibles.</td></tr>';
+      }
+
+      // Render Topic Cards
+      const cardsGrid = document.getElementById('skillTopicCardsGrid');
+      if (cardsGrid) {
+        cardsGrid.innerHTML = topics.map(top => {
+          const spec = topicSpecialists[top];
+          const tot = topicTotals[top] || { hours: 0, tickets: 0, mttrList: [] };
+          const avgMttr = tot.mttrList.length ? (tot.mttrList.reduce((a, b) => a + b, 0) / tot.mttrList.length).toFixed(1) : '-';
+          return `
+            <div class="skill-topic-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <h4 style="margin: 0; font-size: 0.95rem; color: #38bdf8;">${escapeHtml(top)}</h4>
+                <span class="badge ${spec?.hasBackup ? 'badge-ok' : 'badge-warn'}">${spec?.hasBackup ? '🟢 Cobertura OK' : '⚠️ Bus Factor 1'}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--muted);">
+                Total: <strong>${tot.hours.toFixed(1)}h</strong> · <strong>${tot.tickets} tickets</strong> · MTTR Prom: <strong>${avgMttr}h</strong>
+              </div>
+              <div style="padding: 8px 10px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; color: #fbbf24; font-weight: 700;">⭐ Especialista Principal</div>
+                <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">${spec?.leader ? escapeHtml(spec.leader.agent) : 'Sin asignar'}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">${spec?.leader ? `${spec.leader.hours.toFixed(1)}h · ${spec.leader.tickets} tkts · FCR: ${spec.leader.fcrPct}%` : '-'}</div>
+              </div>
+              <div style="padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--panel-border);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--muted); font-weight: 700;">🥈 Respaldo (Backup)</div>
+                <div style="font-weight: 600; color: #cbd5e1; font-size: 0.84rem;">${spec?.backup ? escapeHtml(spec.backup.agent) : '<span style="color: #f87171;">⚠️ Sin respaldo asignado</span>'}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">${spec?.backup ? `${spec.backup.hours.toFixed(1)}h · ${spec.backup.tickets} tkts` : 'Riesgo de concentración de conocimiento'}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // 4. CONTROL DE BOLSAS DE HORAS & CONSUMO CONTRACTUAL
+    function renderContractBagsTab() {
+      const clientHoursMap = {};
+
+      filteredTickets.forEach(t => {
+        const cl = t.client || t.organization || 'Sin cliente';
+        clientHoursMap[cl] = (clientHoursMap[cl] || 0) + (t.hours_logged || 0);
+      });
+
+      // Default bags heuristic
+      const defaultBagForClient = (cl, hrs) => {
+        if (contractBagOverrides[cl]) return Number(contractBagOverrides[cl]);
+        if (hrs > 40) return 50;
+        if (hrs > 20) return 30;
+        if (hrs > 10) return 20;
+        return 10;
+      };
+
+      const today = new Date();
+      const currentDay = today.getDate();
+      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const pacingPct = (currentDay / lastDayOfMonth) * 100;
+
+      const bagEntries = Object.entries(clientHoursMap).map(([clientName, consumed]) => {
+        const contracted = defaultBagForClient(clientName, consumed);
+        const burnRate = (consumed / Math.max(contracted, 1)) * 100;
+        const projected = (consumed / Math.max(currentDay, 1)) * lastDayOfMonth;
+        const projectedBurnRate = (projected / Math.max(contracted, 1)) * 100;
+
+        let exhaustStr = 'En Rango';
+        if (projectedBurnRate >= 100 && consumed > 0) {
+          const daysToExhaust = Math.round((contracted / (consumed / Math.max(currentDay, 1))));
+          const estDay = Math.min(lastDayOfMonth, Math.max(1, daysToExhaust));
+          exhaustStr = `Día ${estDay} del mes`;
+        }
+
+        let statusClass = 'stable';
+        let statusLabel = 'En Rango';
+        let statusIcon = '🟢';
+        if (burnRate >= 100) {
+          statusClass = 'critical';
+          statusLabel = 'Agotada / Exceso';
+          statusIcon = '🔴';
+        } else if (burnRate >= 80 || projectedBurnRate > 105) {
+          statusClass = 'warning';
+          statusLabel = 'Riesgo Agotamiento';
+          statusIcon = '🟡';
+        } else if (burnRate < 30) {
+          statusClass = 'neutral';
+          statusLabel = 'Subutilizada (<30%)';
+          statusIcon = '⚪';
+        }
+
+        return {
+          client: clientName,
+          contracted,
+          consumed,
+          burnRate: burnRate.toFixed(1),
+          projected: projected.toFixed(1),
+          projectedBurnRate: projectedBurnRate.toFixed(1),
+          exhaustStr,
+          statusClass,
+          statusLabel,
+          statusIcon
+        };
+      }).sort((a, b) => b.burnRate - a.burnRate);
+
+      // KPIs
+      const totalContracted = bagEntries.reduce((sum, b) => sum + b.contracted, 0);
+      const totalConsumed = bagEntries.reduce((sum, b) => sum + b.consumed, 0);
+      const consolidatedBurnRate = totalContracted > 0 ? ((totalConsumed / totalContracted) * 100).toFixed(1) : '0';
+      const riskCount = bagEntries.filter(b => Number(b.burnRate) >= 80).length;
+
+      const totContEl = document.getElementById('bagTotalContractedVal');
+      if (totContEl) totContEl.textContent = `${totalContracted.toFixed(0)} h`;
+
+      const totConsEl = document.getElementById('bagTotalConsumedVal');
+      if (totConsEl) totConsEl.textContent = `${totalConsumed.toFixed(1)} h`;
+
+      const burnRateEl = document.getElementById('bagBurnRateVal');
+      if (burnRateEl) burnRateEl.textContent = `${consolidatedBurnRate}%`;
+      const burnRateBadge = document.getElementById('bagBurnRateBadge');
+      if (burnRateBadge) {
+        burnRateBadge.textContent = `${pacingPct.toFixed(0)}% mes transcurrido`;
+        burnRateBadge.className = `bi-kpi-delta ${Number(consolidatedBurnRate) > (pacingPct + 15) ? 'warning' : 'neutral'}`;
+      }
+
+      const riskCountEl = document.getElementById('bagRiskCountVal');
+      if (riskCountEl) riskCountEl.textContent = riskCount;
+      const riskCountBadge = document.getElementById('bagRiskCountBadge');
+      if (riskCountBadge) {
+        riskCountBadge.textContent = `${riskCount} clientes`;
+        riskCountBadge.className = `bi-kpi-delta ${riskCount > 0 ? 'negative' : 'positive'}`;
+      }
+
+      // Render Table
+      const tbody = document.getElementById('contractBagsTbody');
+      if (tbody) {
+        tbody.innerHTML = bagEntries.map(b => {
+          const fillWidth = Math.min(100, Number(b.burnRate));
+          const fillColor = Number(b.burnRate) >= 100 ? '#ef4444' : (Number(b.burnRate) >= 80 ? '#f59e0b' : '#10b981');
+          return `
+            <tr>
+              <td><strong>${escapeHtml(b.client)}</strong></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <input type="number" id="bagInput_${escapeHtml(b.client)}" value="${b.contracted}" min="1" max="500" style="width: 70px; padding: 4px 8px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;">
+                  <button type="button" class="btn-bi" style="padding: 4px 8px; font-size: 0.72rem;" onclick="saveContractBagOverride('${escapeHtml(b.client)}')">💾</button>
+                </div>
+              </td>
+              <td><strong>${b.consumed.toFixed(1)} h</strong></td>
+              <td style="min-width: 140px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 3px;">
+                  <span>${b.burnRate}%</span>
+                  <span style="color: var(--muted);">${fillWidth}% cupo</span>
+                </div>
+                <div class="bag-bar-track">
+                  <div class="bag-bar-fill" style="width: ${fillWidth}%; background: ${fillColor};"></div>
+                  <div class="bag-marker" style="left: ${Math.min(100, pacingPct)}%;" title="Día actual del mes (${pacingPct.toFixed(0)}%)"></div>
+                </div>
+              </td>
+              <td><strong>${b.projected} h</strong> <span style="font-size: 0.75rem; color: var(--muted);">(${b.projectedBurnRate}%)</span></td>
+              <td><span style="color: ${b.exhaustStr.includes('Día') ? '#f87171' : 'var(--muted)'}; font-weight: ${b.exhaustStr.includes('Día') ? '700' : '400'};">${b.exhaustStr}</span></td>
+              <td><span class="health-badge ${b.statusClass}">${b.statusIcon} ${b.statusLabel}</span></td>
+              <td>
+                <button type="button" class="btn-bi" style="padding: 4px 10px; font-size: 0.75rem;" onclick="filterByClientName('${escapeHtml(b.client)}')">Filtrar</button>
+              </td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="8" style="text-align: center; color: var(--muted);">No hay registros de contratos para los filtros activos.</td></tr>';
+      }
+    }
+
+    // Helper para guardar bolsa contratada en localStorage
+    function saveContractBagOverride(clientName) {
+      const input = document.getElementById(`bagInput_${clientName}`);
+      if (!input) return;
+      const val = Number(input.value);
+      if (val > 0) {
+        contractBagOverrides[clientName] = val;
+        localStorage.setItem('jira_bi_contract_bags', JSON.stringify(contractBagOverrides));
+        renderContractBagsTab();
+      }
+    }
+
+    // Helper para filtrar por cliente desde cualquier módulo
+    function filterByClientName(clientName) {
+      if (clientName === 'Sin cliente') return;
+      activeFilters.client = clientName;
+      currentPage = 1;
+      syncSlicersFromState();
+      recomputeAndRenderAll();
+      const el = document.getElementById('drilldownTableTitle');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Exportadores CSV
+    function exportHeatmapToCsv() {
+      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + 'h');
+      const table = document.getElementById('heatmapTable');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th, td')).map(cell => `"${cell.innerText.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`).join(';')
+      );
+      const csvContent = "\ufeff" + rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Mapa_Calor_7x24_${heatmapMetricMode}_${document.getElementById('fromDate').value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportClientHealthToCsv() {
+      const table = document.querySelector('#tabClientHealth table');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th, td')).map(cell => `"${cell.innerText.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`).join(';')
+      );
+      const csvContent = "\ufeff" + rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Health_Score_Clientes_${document.getElementById('fromDate').value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportSkillMatrixToCsv() {
+      const table = document.getElementById('skillMatrixTable');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th, td')).map(cell => `"${cell.innerText.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`).join(';')
+      );
+      const csvContent = "\ufeff" + rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Skill_Matrix_Especializacion_${document.getElementById('fromDate').value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportContractBagsToCsv() {
+      const table = document.querySelector('#tabContractBags table');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th, td')).map(cell => `"${cell.innerText.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`).join(';')
+      );
+      const csvContent = "\ufeff" + rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bolsas_Horas_Contratos_${document.getElementById('fromDate').value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Heatmap event listeners
+    document.getElementById('btnHeatmapDemand')?.addEventListener('click', () => {
+      heatmapMetricMode = 'demand';
+      document.getElementById('btnHeatmapDemand').classList.add('active');
+      document.getElementById('btnHeatmapCapacity').classList.remove('active');
+      renderHeatmapTab();
+    });
+
+    document.getElementById('btnHeatmapCapacity')?.addEventListener('click', () => {
+      heatmapMetricMode = 'capacity';
+      document.getElementById('btnHeatmapCapacity').classList.add('active');
+      document.getElementById('btnHeatmapDemand').classList.remove('active');
+      renderHeatmapTab();
+    });
+
+    document.getElementById('heatmapDemandFilter')?.addEventListener('change', (e) => {
+      heatmapDemandFilter = e.target.value;
+      renderHeatmapTab();
+    });
+
+    document.getElementById('clientHealthSearch')?.addEventListener('input', (e) => {
+      clientHealthSearch = e.target.value;
+      renderClientHealthTab();
+    });
+
+    document.getElementById('exportHeatmapCsvBtn')?.addEventListener('click', exportHeatmapToCsv);
+    document.getElementById('exportClientHealthCsvBtn')?.addEventListener('click', exportClientHealthToCsv);
+    document.getElementById('exportSkillMatrixCsvBtn')?.addEventListener('click', exportSkillMatrixToCsv);
+    document.getElementById('exportContractBagsCsvBtn')?.addEventListener('click', exportContractBagsToCsv);
 
     // Inicialización automática
     loadBiDataset({ sync: false });
