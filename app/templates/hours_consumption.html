@@ -3,7 +3,7 @@
 {% block title %}Consumo de Horas - {{ request.app.title }}{% endblock %}
 
 {% block extra_head %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block extra_css %}
@@ -16,6 +16,7 @@
     gap: 16px;
     margin-bottom: 24px;
   }
+
   .header-title h1 {
     margin: 0;
     font-size: 1.8rem;
@@ -24,12 +25,13 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
   .header-title p {
     margin: 4px 0 0;
     color: var(--muted);
     font-size: 0.95rem;
   }
-  
+
   .filter-panel {
     padding: 20px 24px;
     margin-bottom: 28px;
@@ -45,6 +47,7 @@
     gap: 8px;
     flex-wrap: wrap;
   }
+
   .btn-range {
     padding: 6px 14px;
     border-radius: 999px;
@@ -56,7 +59,9 @@
     cursor: pointer;
     transition: all 0.2s ease;
   }
-  .btn-range:hover, .btn-range.active {
+
+  .btn-range:hover,
+  .btn-range.active {
     background: rgba(14, 165, 233, 0.15);
     color: var(--accent);
     border-color: var(--accent);
@@ -68,7 +73,7 @@
     gap: 16px;
     align-items: flex-end;
   }
-  
+
   .btn-export-pdf {
     display: inline-flex;
     align-items: center;
@@ -85,6 +90,7 @@
     transition: all 0.2s ease;
     text-decoration: none;
   }
+
   .btn-export-pdf:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
@@ -95,6 +101,7 @@
     position: relative;
     min-width: 210px;
   }
+
   .multiselect-btn {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -109,6 +116,7 @@
     gap: 8px;
     user-select: none;
   }
+
   .multiselect-dropdown {
     display: none;
     position: absolute;
@@ -124,9 +132,11 @@
     overflow-y: auto;
     padding: 8px;
   }
+
   .multiselect-dropdown.show {
     display: block;
   }
+
   .multiselect-option {
     display: flex;
     align-items: center;
@@ -139,18 +149,23 @@
     font-weight: 500;
     transition: background 0.15s ease;
   }
+
   .multiselect-option:hover {
     background: rgba(255, 255, 255, 0.1);
   }
-  .multiselect-option span, .multiselect-option strong {
+
+  .multiselect-option span,
+  .multiselect-option strong {
     color: #f8fafc;
   }
+
   .multiselect-option input[type="checkbox"] {
     accent-color: var(--accent);
     width: 16px;
     height: 16px;
     cursor: pointer;
   }
+
   .dropdown-divider {
     height: 1px;
     background: var(--panel-border);
@@ -164,6 +179,7 @@
     gap: 20px;
     margin-bottom: 28px;
   }
+
   .kpi-card {
     padding: 20px 24px;
     display: flex;
@@ -172,12 +188,17 @@
     position: relative;
     overflow: hidden;
   }
+
   .kpi-card::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
     background: var(--accent);
   }
+
   .kpi-title {
     font-size: 0.82rem;
     font-weight: 700;
@@ -185,12 +206,14 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+
   .kpi-val {
     font-size: 1.9rem;
     font-weight: 800;
     color: var(--text);
     line-height: 1.1;
   }
+
   .kpi-sub {
     font-size: 0.85rem;
     color: var(--muted);
@@ -203,8 +226,11 @@
     gap: 24px;
     margin-bottom: 28px;
   }
+
   @media (max-width: 1200px) {
-    .charts-grid-3 { grid-template-columns: 1fr; }
+    .charts-grid-3 {
+      grid-template-columns: 1fr;
+    }
   }
 
   .chart-card {
@@ -213,6 +239,7 @@
     flex-direction: column;
     gap: 16px;
   }
+
   .chart-card h3 {
     margin: 0;
     font-size: 1.1rem;
@@ -226,8 +253,11 @@
     gap: 24px;
     margin-bottom: 28px;
   }
+
   @media (max-width: 1200px) {
-    .tables-grid-3 { grid-template-columns: 1fr; }
+    .tables-grid-3 {
+      grid-template-columns: 1fr;
+    }
   }
 
   .table-card {
@@ -237,6 +267,7 @@
     gap: 16px;
     overflow: auto;
   }
+
   .table-card h3 {
     margin: 0;
     font-size: 1.1rem;
@@ -248,6 +279,7 @@
     border-collapse: collapse;
     font-size: 0.9rem;
   }
+
   .table-custom th {
     text-align: left;
     padding: 10px 12px;
@@ -255,15 +287,17 @@
     font-weight: 600;
     border-bottom: 1px solid var(--panel-border);
   }
+
   .table-custom td {
     padding: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     vertical-align: middle;
   }
+
   .table-custom tr:hover td {
     background: rgba(255, 255, 255, 0.02);
   }
-  
+
   .progress-track {
     width: 100%;
     height: 6px;
@@ -272,10 +306,30 @@
     overflow: hidden;
     margin-top: 4px;
   }
+
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent-2));
     border-radius: 999px;
+  }
+
+  /* Badges & Table Wrapper */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-req { background: rgba(139, 92, 246, 0.16); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.35); }
+  .badge-inc { background: rgba(239, 68, 68, 0.16); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+  .badge-l12 { background: rgba(14, 165, 233, 0.16); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); }
+  .table-wrapper {
+    overflow-x: auto;
+    max-inline-size: 100%;
+    border-radius: 12px;
   }
 </style>
 {% endblock %}
@@ -287,7 +341,11 @@
     <p>Reporte ejecutivo de horas invertidas en soporte, proyectos y mantenimientos.</p>
   </div>
   <button id="btnExportPdf" class="btn-export-pdf">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
     Exportar PDF (Reporte Ejecutivo)
   </button>
 </div>
@@ -326,7 +384,9 @@
       <label>Estados de Ticket</label>
       <div id="statusMultiSelect" class="multiselect-btn" onclick="toggleStatusDropdown(event)">
         <span id="statusSelectLabel">-- Todos los Estados --</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
       </div>
       <div id="statusDropdown" class="multiselect-dropdown print-only-hide" onclick="event.stopPropagation()">
         <label class="multiselect-option">
@@ -411,7 +471,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -428,7 +490,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -445,29 +509,55 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td></tr>
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--muted);">Cargando datos...</td>
+        </tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <div class="panel table-card" style="margin-bottom: 32px;">
-  <h3>Detalle de Tickets con Mayor Registro de Horas</h3>
-  <table class="table-custom" id="ticketTable">
-    <thead>
-      <tr>
-        <th>Clave Jira</th>
-        <th>Resumen / Asunto</th>
-        <th>Cliente</th>
-        <th>Técnico</th>
-        <th>Nivel</th>
-        <th style="text-align: right;">Horas Logueadas</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td colspan="6" style="text-align: center; color: var(--muted);">Cargando tickets...</td></tr>
-    </tbody>
-  </table>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+    <div>
+      <h3 style="margin: 0; font-size: 1.25rem;">Detalle de Tickets y Atenciones con Registro de Horas</h3>
+      <div style="font-size: 0.84rem; color: var(--muted); margin-top: 4px;">
+        Visualiza el usuario solicitante, el tipo de solicitud, el resumen y el detalle/comentario de atención de cada ticket.
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <input type="search" id="ticketSearchInput" placeholder="Buscar por clave, solicitante, tipo, comentario, cliente..." style="padding: 8px 14px; border-radius: 10px; font-size: 0.85rem; min-width: 280px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--panel-border); color: #fff;">
+      <select id="ticketPageSize" style="padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--panel-border); color: #fff;">
+        <option value="30">Mostrar: 30 tickets</option>
+        <option value="50">Mostrar: 50 tickets</option>
+        <option value="100">Mostrar: 100 tickets</option>
+        <option value="all">Mostrar: Todos</option>
+      </select>
+    </div>
+  </div>
+
+  <div tabindex="0" role="region" aria-label="Detalle de tickets con horas" class="table-wrapper">
+    <table class="table-custom" id="ticketTable">
+      <thead>
+        <tr>
+          <th>Clave Jira</th>
+          <th>Tipo Solicitud</th>
+          <th>Solicitante / Usuario</th>
+          <th>Resumen / Asunto</th>
+          <th>Detalle / Comentario de Atención</th>
+          <th>Cliente</th>
+          <th>Técnico</th>
+          <th>Nivel</th>
+          <th style="text-align: right;">Horas Logueadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="9" style="text-align: center; color: var(--muted);">Cargando tickets...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
 
@@ -487,8 +577,11 @@
     document.getElementById('clientSelect').addEventListener('change', fetchReportData);
     document.getElementById('agentSelect').addEventListener('change', fetchReportData);
     document.getElementById('serviceLevelSelect').addEventListener('change', fetchReportData);
-    
+
     document.getElementById('btnExportPdf').addEventListener('click', exportPdf);
+
+    document.getElementById('ticketSearchInput')?.addEventListener('input', () => renderTicketTable());
+    document.getElementById('ticketPageSize')?.addEventListener('change', () => renderTicketTable());
 
     document.addEventListener('click', () => {
       const dropdown = document.getElementById('statusDropdown');
@@ -506,7 +599,7 @@
     try {
       const fromVal = document.getElementById('fromDate').value;
       const toVal = document.getElementById('toDate').value;
-      
+
       const [clientRes, agentRes, statusRes] = await Promise.all([
         fetch(`/api/reports/ticket-clients?from_date=${fromVal}&to_date=${toVal}`),
         fetch(`/api/reports/agents?from_date=${fromVal}&to_date=${toVal}`),
@@ -642,7 +735,7 @@
       const res = await fetch(url);
       if (!res.ok) throw new Error('Error al obtener datos');
       const data = await res.json();
-      
+
       updateKpis(data.kpis);
       renderDailyChart(data.daily_series);
       renderClientChart(data.clients);
@@ -840,27 +933,87 @@
     `).join('');
   }
 
+  let allReportTickets = [];
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function renderTicketTable(tickets) {
+    if (tickets) allReportTickets = tickets;
     const tbody = document.querySelector('#ticketTable tbody');
-    if (!tickets || tickets.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Sin tickets</td></tr>';
+    if (!allReportTickets || allReportTickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted);">Sin tickets</td></tr>';
       return;
     }
 
-    tbody.innerHTML = tickets.slice(0, 30).map(t => `
-      <tr>
-        <td>
-          <a href="${jiraBaseUrl}/browse/${t.jira_key}" target="_blank" style="color: var(--accent); font-weight:700; text-decoration:none;">
-            ${t.jira_key}
-          </a>
-        </td>
-        <td>${t.summary}</td>
-        <td><span style="color: var(--muted);">${t.client_name}</span></td>
-        <td>${t.agent_name}</td>
-        <td><span class="weekly-pill" style="font-size:0.75rem; padding:3px 8px;">${t.service_level}</span></td>
-        <td style="text-align: right;"><strong>${t.hours_logged.toFixed(2)} hrs</strong></td>
-      </tr>
-    `).join('');
+    const searchVal = (document.getElementById('ticketSearchInput')?.value || '').toLowerCase().trim();
+    const pageSizeVal = document.getElementById('ticketPageSize')?.value || '30';
+
+    let filtered = allReportTickets;
+    if (searchVal) {
+      filtered = allReportTickets.filter(t => 
+        (t.jira_key || '').toLowerCase().includes(searchVal) ||
+        (t.summary || '').toLowerCase().includes(searchVal) ||
+        (t.reporter_name || '').toLowerCase().includes(searchVal) ||
+        (t.issue_type || '').toLowerCase().includes(searchVal) ||
+        (t.comment || '').toLowerCase().includes(searchVal) ||
+        (t.client_name || '').toLowerCase().includes(searchVal) ||
+        (t.agent_name || '').toLowerCase().includes(searchVal)
+      );
+    }
+
+    const limit = pageSizeVal === 'all' ? filtered.length : Number(pageSizeVal);
+    const visibleTickets = filtered.slice(0, limit);
+
+    if (visibleTickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted);">No se encontraron tickets con la búsqueda actual</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = visibleTickets.map(t => {
+      const isInc = (t.issue_type || '').toLowerCase().includes('inciden');
+      const commentHtml = t.comment 
+        ? `<div style="max-width: 320px; font-size: 0.8rem; color: #cbd5e1; line-height: 1.35; white-space: pre-wrap; word-break: break-word;">${escapeHtml(t.comment)}</div>` 
+        : `<span style="color: var(--muted); font-size: 0.78rem;">-</span>`;
+
+      return `
+        <tr>
+          <td>
+            <a href="${jiraBaseUrl}/browse/${t.jira_key}" target="_blank" style="color: var(--accent); font-weight:700; text-decoration:none;">
+              ${t.jira_key}
+            </a>
+          </td>
+          <td>
+            <span class="badge ${isInc ? 'badge-inc' : 'badge-req'}">
+              ${escapeHtml(t.issue_type || 'Ticket')}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: #f1f5f9; display: flex; align-items: center; gap: 5px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #38bdf8;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              ${escapeHtml(t.reporter_name || 'Sin informador')}
+            </div>
+          </td>
+          <td>
+            <div style="font-weight: 500; max-width: 260px; line-height: 1.3;">
+              ${escapeHtml(t.summary)}
+            </div>
+          </td>
+          <td>${commentHtml}</td>
+          <td><span style="color: var(--muted);">${escapeHtml(t.client_name)}</span></td>
+          <td>${escapeHtml(t.agent_name)}</td>
+          <td><span class="weekly-pill" style="font-size:0.75rem; padding:3px 8px;">${escapeHtml(t.service_level)}</span></td>
+          <td style="text-align: right;"><strong>${t.hours_logged.toFixed(2)} hrs</strong></td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function exportPdf() {

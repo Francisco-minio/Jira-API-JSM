@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import html
 import io
 
 from reportlab.lib import colors
@@ -409,38 +410,52 @@ def generate_hours_consumption_pdf(
     # Section 5: Detalle de Tickets Atendidos
     tickets = report_data.get("tickets", [])
     if tickets:
-        story.append(Paragraph("5. Detalle de Tickets con Registros de Horas", section_heading))
+        story.append(Paragraph("5. Detalle de Tickets y Atenciones con Registros de Horas", section_heading))
         tkt_table_data = [
             [
                 Paragraph("Clave Jira", cell_head),
-                Paragraph("Resumen / Descripción", cell_head),
-                Paragraph("Cliente", cell_head),
-                Paragraph("Técnico", cell_head),
+                Paragraph("Tipo Solicitud", cell_head),
+                Paragraph("Solicitante", cell_head),
+                Paragraph("Resumen / Comentario de Atención", cell_head),
+                Paragraph("Cliente / Técnico", cell_head),
                 Paragraph("Horas", cell_head_right),
             ]
         ]
-        for t_row in tickets[:50]:  # Top 50 tickets por consumo
-            summary_trunc = t_row["summary"]
-            if len(summary_trunc) > 42:
-                summary_trunc = summary_trunc[:40] + "..."
+        for t_row in tickets[:60]:  # Top 60 tickets por consumo
+            summary_text = t_row.get("summary", "") or ""
+            if len(summary_text) > 70:
+                summary_text = summary_text[:67] + "..."
+            
+            comment_text = t_row.get("comment", "") or ""
+            if len(comment_text) > 130:
+                comment_text = comment_text[:127] + "..."
+
+            if comment_text:
+                desc_html = f"<b>{html.escape(summary_text)}</b><br/><font color='#64748b' size='7'>{html.escape(comment_text)}</font>"
+            else:
+                desc_html = f"<b>{html.escape(summary_text)}</b>"
+
+            client_agent_html = f"{html.escape(t_row.get('client_name', ''))}<br/><font color='#64748b' size='7'>Téc: {html.escape(t_row.get('agent_name', ''))}</font>"
+            
             tkt_table_data.append(
                 [
                     Paragraph(t_row["jira_key"], cell_body_bold),
-                    Paragraph(summary_trunc, cell_body),
-                    Paragraph(t_row["client_name"], cell_body),
-                    Paragraph(t_row["agent_name"], cell_body),
+                    Paragraph(html.escape(t_row.get("issue_type", "Ticket")), cell_body),
+                    Paragraph(html.escape(t_row.get("reporter_name", "Sin informador")), cell_body),
+                    Paragraph(desc_html, cell_body),
+                    Paragraph(client_agent_html, cell_body),
                     Paragraph(f"{t_row['hours_logged']:.2f} h", cell_body_right_bold),
                 ]
             )
 
-        tkt_table = Table(tkt_table_data, colWidths=[65, 195, 120, 100, 60])
+        tkt_table = Table(tkt_table_data, colWidths=[52, 68, 75, 205, 90, 50])
         tkt_table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
                     ("PADDING", (0, 0), (-1, -1), 4),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
                 ]
             )

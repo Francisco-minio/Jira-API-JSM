@@ -380,6 +380,9 @@ class HoursConsumptionTicketRow(BaseModel):
     service_level: str
     hours_logged: float
     worklog_count: int
+    reporter_name: str = "Sin informador"
+    issue_type: str = "Ticket"
+    comment: str | None = None
 
 
 class HoursConsumptionSeriesPoint(BaseModel):

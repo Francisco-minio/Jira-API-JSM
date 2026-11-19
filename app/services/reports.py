@@ -1569,6 +1569,40 @@ def build_hours_consumption_report(
         c_label = _issue_client_label(issue)
         sl_label = _issue_service_level_label(issue)
         ag_name = issue.assignee_agent.name if issue.assignee_agent else (w_list[0].author_agent.name if w_list and w_list[0].author_agent else "Sin asignar")
+
+        raw_fields = (issue.raw_payload or {}).get("fields") or {}
+        reporter_name = (
+            issue.reporter_client.name
+            if issue.reporter_client
+            else (
+                raw_fields.get("reporter", {}).get("displayName")
+                or raw_fields.get("reporter", {}).get("name")
+                or raw_fields.get("reporter", {}).get("emailAddress")
+                or "Sin informador"
+            )
+        )
+        issue_type = issue.issue_type or (raw_fields.get("issuetype", {}).get("name") or "Ticket")
+
+        # Comentario o detalle de la atención (worklogs del periodo o descripción del ticket)
+        wl_comments = [w.comment.strip() for w in w_list if w.comment and w.comment.strip()]
+        if wl_comments:
+            unique_comments = []
+            for c in wl_comments:
+                if not unique_comments or c != unique_comments[-1]:
+                    unique_comments.append(c)
+            work_comment = " | ".join(unique_comments)
+        else:
+            desc = raw_fields.get("description")
+            if isinstance(desc, str) and desc.strip():
+                work_comment = desc.strip()
+            else:
+                comments_list = raw_fields.get("comment", {}).get("comments") or []
+                if comments_list:
+                    last_c = comments_list[-1].get("body")
+                    work_comment = str(last_c).strip() if last_c else None
+                else:
+                    work_comment = None
+
         ticket_rows.append({
             "jira_key": issue.jira_key,
             "summary": issue.summary,
@@ -1577,6 +1611,9 @@ def build_hours_consumption_report(
             "service_level": sl_label,
             "hours_logged": round(hrs, 2),
             "worklog_count": len(w_list),
+            "reporter_name": reporter_name,
+            "issue_type": issue_type,
+            "comment": work_comment,
         })
 
     ticket_rows.sort(key=lambda x: x["hours_logged"], reverse=True)
