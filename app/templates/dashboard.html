@@ -2218,11 +2218,12 @@
 
       <!-- TABLA DETALLADA DE BOLSAS DE HORAS POR CLIENTE (modern-web-guidance: responsive-table) -->
       <div tabindex="0" role="region" aria-labelledby="contractBagsTitle" class="table-wrapper">
-        <table class="responsive-stack" style="--label-2: 'Cliente'; --label-3: 'Bolsa Contratada'; --label-4: 'Horas Consumidas'; --label-5: 'Burn Rate'; --label-6: 'Proyección Fin Mes'; --label-7: 'Fecha Agotamiento'; --label-8: 'Estado'; --label-9: 'Acción';">
+        <table class="responsive-stack" style="--label-2: 'Cliente'; --label-3: 'Bolsa Contratada'; --label-4: 'Término / Vencimiento'; --label-5: 'Horas Consumidas'; --label-6: 'Burn Rate'; --label-7: 'Proyección Fin Mes'; --label-8: 'Fecha Agotamiento'; --label-9: 'Estado'; --label-10: 'Acción';">
           <thead>
             <tr>
               <th>Cliente / Cuenta</th>
               <th>Bolsa Contratada (h)</th>
+              <th>Fecha Término / Vencimiento</th>
               <th>Horas Consumidas</th>
               <th>Burn Rate %</th>
               <th>Proyección Fin de Mes</th>
@@ -2237,7 +2238,7 @@
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
         <div style="font-size: 0.78rem; color: var(--muted);">
-          💡 <em>Puedes modificar el cupo contratado de cualquier cliente directamente en la tabla y presionar Guardar para actualizar su burn rate y proyección.</em>
+          💡 <em>Define el cupo de horas y la <strong>Fecha de Finalización / Vencimiento</strong> de la bolsa para cada cliente en la tabla y presiona 💾 Guardar. La vigencia se calcula automáticamente.</em>
         </div>
       </div>
     </section>
@@ -5656,26 +5657,37 @@
         clientHoursMap[cl] = (clientHoursMap[cl] || 0) + (t.hours_logged || 0);
       });
 
-      // Default bags heuristic
-      const defaultBagForClient = (cl, hrs) => {
-        if (contractBagOverrides[cl]) return Number(contractBagOverrides[cl]);
-        if (hrs > 40) return 50;
-        if (hrs > 20) return 30;
-        if (hrs > 10) return 20;
-        return 10;
+      // Default bags heuristic & date loading
+      const getClientBagConfig = (cl, hrs) => {
+        const saved = contractBagOverrides[cl];
+        let contracted = 10;
+        if (hrs > 40) contracted = 50;
+        else if (hrs > 20) contracted = 30;
+        else if (hrs > 10) contracted = 20;
+
+        let endDate = '';
+        if (typeof saved === 'object' && saved !== null) {
+          if (saved.hours) contracted = Number(saved.hours);
+          if (saved.endDate) endDate = saved.endDate;
+        } else if (typeof saved === 'number') {
+          contracted = saved;
+        }
+        return { contracted, endDate };
       };
 
       const today = new Date();
-      const currentDay = today.getDate();
+      today.setHours(0, 0, 0, 0);
+      const currentDay = (new Date()).getDate();
       const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
       const pacingPct = (currentDay / lastDayOfMonth) * 100;
 
       const bagEntries = Object.entries(clientHoursMap).map(([clientName, consumed]) => {
-        const contracted = defaultBagForClient(clientName, consumed);
+        const { contracted, endDate } = getClientBagConfig(clientName, consumed);
         const burnRate = (consumed / Math.max(contracted, 1)) * 100;
         const projected = (consumed / Math.max(currentDay, 1)) * lastDayOfMonth;
         const projectedBurnRate = (projected / Math.max(contracted, 1)) * 100;
 
+        // Fecha de agotamiento por ritmo de consumo
         let exhaustStr = 'En Rango';
         if (projectedBurnRate >= 100 && consumed > 0) {
           const daysToExhaust = Math.round((contracted / (consumed / Math.max(currentDay, 1))));
@@ -5683,13 +5695,43 @@
           exhaustStr = `Día ${estDay} del mes`;
         }
 
+        // Vigencia contractual por fecha de término
+        let validityDaysStr = 'Sin fecha fin';
+        let isExpired = false;
+        let isExpiringSoon = false;
+        if (endDate) {
+          const endD = new Date(endDate + 'T00:00:00');
+          const diffMs = endD - today;
+          const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            validityDaysStr = `⚠️ Vencida hace ${Math.abs(diffDays)}d`;
+            isExpired = true;
+          } else if (diffDays === 0) {
+            validityDaysStr = `⚠️ Vence hoy`;
+            isExpiringSoon = true;
+          } else if (diffDays <= 15) {
+            validityDaysStr = `🟡 Quedan ${diffDays} días`;
+            isExpiringSoon = true;
+          } else {
+            validityDaysStr = `🟢 Quedan ${diffDays} días`;
+          }
+        }
+
         let statusClass = 'stable';
         let statusLabel = 'En Rango';
         let statusIcon = '🟢';
-        if (burnRate >= 100) {
+        if (isExpired) {
+          statusClass = 'critical';
+          statusLabel = 'Vigencia Vencida';
+          statusIcon = '🔴';
+        } else if (burnRate >= 100) {
           statusClass = 'critical';
           statusLabel = 'Agotada / Exceso';
           statusIcon = '🔴';
+        } else if (isExpiringSoon) {
+          statusClass = 'warning';
+          statusLabel = 'Por Vencer';
+          statusIcon = '🟡';
         } else if (burnRate >= 80 || projectedBurnRate > 105) {
           statusClass = 'warning';
           statusLabel = 'Riesgo Agotamiento';
@@ -5703,6 +5745,10 @@
         return {
           client: clientName,
           contracted,
+          endDate,
+          validityDaysStr,
+          isExpired,
+          isExpiringSoon,
           consumed,
           burnRate: burnRate.toFixed(1),
           projected: projected.toFixed(1),
@@ -5712,13 +5758,17 @@
           statusLabel,
           statusIcon
         };
-      }).sort((a, b) => b.burnRate - a.burnRate);
+      }).sort((a, b) => {
+        if (a.isExpired && !b.isExpired) return -1;
+        if (!a.isExpired && b.isExpired) return 1;
+        return b.burnRate - a.burnRate;
+      });
 
       // KPIs
       const totalContracted = bagEntries.reduce((sum, b) => sum + b.contracted, 0);
       const totalConsumed = bagEntries.reduce((sum, b) => sum + b.consumed, 0);
       const consolidatedBurnRate = totalContracted > 0 ? ((totalConsumed / totalContracted) * 100).toFixed(1) : '0';
-      const riskCount = bagEntries.filter(b => Number(b.burnRate) >= 80).length;
+      const riskCount = bagEntries.filter(b => Number(b.burnRate) >= 80 || b.isExpired || b.isExpiringSoon).length;
 
       const totContEl = document.getElementById('bagTotalContractedVal');
       if (totContEl) totContEl.textContent = `${totalContracted.toFixed(0)} h`;
@@ -5738,7 +5788,7 @@
       if (riskCountEl) riskCountEl.textContent = riskCount;
       const riskCountBadge = document.getElementById('bagRiskCountBadge');
       if (riskCountBadge) {
-        riskCountBadge.textContent = `${riskCount} clientes`;
+        riskCountBadge.textContent = `${riskCount} alertas`;
         riskCountBadge.className = `bi-kpi-delta ${riskCount > 0 ? 'negative' : 'positive'}`;
       }
 
@@ -5753,8 +5803,16 @@
               <td><strong>${escapeHtml(b.client)}</strong></td>
               <td>
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <input type="number" id="bagInput_${escapeHtml(b.client)}" value="${b.contracted}" min="1" max="500" style="width: 70px; padding: 4px 8px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;">
-                  <button type="button" class="btn-bi" style="padding: 4px 8px; font-size: 0.72rem;" onclick="saveContractBagOverride('${escapeHtml(b.client)}')">💾</button>
+                  <input type="number" id="bagInput_${escapeHtml(b.client)}" value="${b.contracted}" min="1" max="500" style="width: 65px; padding: 4px 6px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;">
+                  <button type="button" class="btn-bi" style="padding: 4px 8px; font-size: 0.72rem;" title="Guardar cupo y fecha de término" onclick="saveContractBagOverride('${escapeHtml(b.client)}')">💾</button>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <input type="date" id="bagDateInput_${escapeHtml(b.client)}" value="${b.endDate}" style="padding: 4px 6px; border-radius: 8px; font-size: 0.78rem;">
+                  <span style="font-size: 0.72rem; color: ${b.isExpired ? '#f87171' : (b.isExpiringSoon ? '#fbbf24' : 'var(--muted)')}; font-weight: 600;">
+                    ${b.validityDaysStr}
+                  </span>
                 </div>
               </td>
               <td><strong>${b.consumed.toFixed(1)} h</strong></td>
@@ -5776,17 +5834,19 @@
               </td>
             </tr>
           `;
-        }).join('') || '<tr><td colspan="8" style="text-align: center; color: var(--muted);">No hay registros de contratos para los filtros activos.</td></tr>';
+        }).join('') || '<tr><td colspan="9" style="text-align: center; color: var(--muted);">No hay registros de contratos para los filtros activos.</td></tr>';
       }
     }
 
-    // Helper para guardar bolsa contratada en localStorage
+    // Helper para guardar bolsa contratada y fecha de término en localStorage
     function saveContractBagOverride(clientName) {
-      const input = document.getElementById(`bagInput_${clientName}`);
-      if (!input) return;
-      const val = Number(input.value);
-      if (val > 0) {
-        contractBagOverrides[clientName] = val;
+      const hoursInput = document.getElementById(`bagInput_${clientName}`);
+      const dateInput = document.getElementById(`bagDateInput_${clientName}`);
+      if (!hoursInput) return;
+      const hoursVal = Number(hoursInput.value);
+      const dateVal = dateInput ? dateInput.value : '';
+      if (hoursVal > 0) {
+        contractBagOverrides[clientName] = { hours: hoursVal, endDate: dateVal };
         localStorage.setItem('jira_bi_contract_bags', JSON.stringify(contractBagOverrides));
         renderContractBagsTab();
       }
